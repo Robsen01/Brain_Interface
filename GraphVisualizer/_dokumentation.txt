@@ -1,0 +1,10 @@
+braucht matplotlib package:
+    https://matplotlib.org/stable/users/installing.html
+    python -m pip install -U matplotlib
+
+
+1ne Klasse die mit Mathplotlib die Daten Visualisiert.
+muss im main-thread laufen?!
+braucht funktion, mit der wie in eine Queue die neuen Daten reingeschoben werden
+muss wissen, wie groß die Schritte auf der x-Achse pro datenpunkt sind
+muss wissen, welcher Zeitintervall auf der X-Achse abgebildet werden soll
