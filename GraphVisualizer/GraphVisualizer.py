@@ -18,20 +18,20 @@ class GraphVisualizer:
         # counts the time since the last push_step, resets if item is inserted into queue in push_step
         self.ms_since_last_push = 0 
             
+        # fill initial queue and X_Value values
         self.y_queue = []
-        self.x_Values = []
+        self.x_values = []
 
-        for x in range(0, x_Range, x_Step):
+        for x in range(0, self.x_Range, self.x_Step):
             self.y_queue.append(0)
-            self.x_Values.append(x)
+            self.x_values.append(x)
 
         # setup the plot
         style.use('fivethirtyeight') # not shure if this needs to be here
-
         self.fig = plt.figure()
         self.ax1 = self.fig.add_subplot(1,1,1)
 
-        if animation_show:
+        if self.animation_show:
             self.animate()
 
     '''
@@ -63,7 +63,7 @@ class GraphVisualizer:
 
     def animation_func(self, i):
         self.ax1.clear()
-        self.ax1.plot(self.x_Values, self.y_queue)
+        self.ax1.plot(self.x_values, self.y_queue)
 
     '''
     animate = True shows and animates the graph, if its not animated already
