@@ -67,9 +67,10 @@ class GraphVisualizer:
 
     '''
     animate = True shows and animates the graph, if its not animated already
-    animate = False stops the animation, if the graph was already animated
+    animate = False stops the animation, if the graph was already animated; not implemented
     '''
     def animate(self, animate = True, interval = 250):
-        style.use('fivethirtyeight')
-        ani = animation.FuncAnimation(self.fig, self.animation_func, interval= interval)
-        plt.show()
+        if animate:
+            style.use('fivethirtyeight')
+            self.ani = animation.FuncAnimation(self.fig, self.animation_func, interval= interval)
+            plt.show()

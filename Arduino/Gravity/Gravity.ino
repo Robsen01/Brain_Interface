@@ -62,11 +62,12 @@ static int Threshold = 0;
 unsigned long timeStamp;
 unsigned long timeBudget;
 
-bool initiated = false;
+bool started = false;
 bool sendRawData = false;
 bool sendFilteredData = false;
 bool sendEnvlope = false;
 String dataSeperation = ",";
+String s = "";
 
 void setup() {
     /* add setup code here */
@@ -81,10 +82,9 @@ void setup() {
     // micros will overflow and auto return to zero every 70 minutes
 }
 
-void init() {
+void start() {
   if(Serial.available() > 0) {
-    String s = Serial.readString();
-    
+    s = Serial.readString();
     dataSeperation = String(s.charAt(0));
     if(s.charAt(1) == '1') {
       sendRawData = true;
@@ -95,7 +95,7 @@ void init() {
     if(s.charAt(3) == '1') {
       sendEnvlope = true;
     }
-    initiated = true;
+    started = true;
   }
 }
 
@@ -118,18 +118,23 @@ void inloop() {
     timeStamp = micros() - timeStamp;
     String data = "";
     if(sendRawData) {
-      data += String(Value);
+      data += Value;
       data += dataSeperation;
     }
     if(sendFilteredData) {
-      data += String(DataAfterFilter);
+      data += DataAfterFilter;
       data += dataSeperation;
     }
     if(sendEnvlope) {
-      data += String(envlope);
+      data += envlope;
       data += dataSeperation;
     }
-    data.trim(dataSeperation);
+    
+    data.replace(dataSeperation, " ");
+    data.trim();
+    data.replace(" ", dataSeperation);
+    Serial.println(data);
+    
     //Serial.print("Read Data: "); Serial.println(Value);
     //Serial.print("Filtered Data: ");Serial.println(DataAfterFilter);
     //Serial.print("Squared Data: ");
@@ -146,10 +151,10 @@ void inloop() {
 }
 
 void loop() {
-   if(initiated) {
-    inloop()
+   if(started) {
+    inloop();
    }
    else {
-    init();
+    start();
    }
 }
