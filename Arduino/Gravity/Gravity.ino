@@ -57,7 +57,7 @@ int humFreq = NOTCH_FREQ_50HZ;
 // put on the sensors, and release your muscles;
 // wait a few seconds, and select the max value as the threshold;
 // any value under threshold will be set to zero
-static int Threshold = 0;
+static int Threshold = 500;
 
 unsigned long timeStamp;
 unsigned long timeBudget;
@@ -115,8 +115,9 @@ void inloop() {
     // any value under threshold will be set to zero
     envlope = (envlope > Threshold) ? envlope : 0;
 
-    timeStamp = micros() - timeStamp;
+    //prepare datastring
     String data = "";
+    
     if(sendRawData) {
       data += Value;
       data += dataSeperation;
@@ -129,10 +130,11 @@ void inloop() {
       data += envlope;
       data += dataSeperation;
     }
-    
     data.replace(dataSeperation, " ");
     data.trim();
     data.replace(" ", dataSeperation);
+
+    timeStamp = micros() - timeStamp;
     Serial.println(data);
     
     //Serial.print("Read Data: "); Serial.println(Value);

@@ -7,11 +7,15 @@ import time
 
 pdr = PiDataReceiver.PiDataReceiver(port="COM3", send_raw_data=True, send_envlope=True, send_filtered_data=True)
 
+for p in pdr.list_possible_ports():
+    print(p)
+
 style.use('fivethirtyeight') # not shure if this needs to be here
 fig = plt.figure()
-ax0 = fig.add_subplot(1,3,1)
-ax1 = fig.add_subplot(1,3,2)
-ax2 = fig.add_subplot(1,3,3)
+# ax0 = fig.add_subplot(1,3,1)
+# ax1 = fig.add_subplot(1,3,2)
+# ax2 = fig.add_subplot(1,3,3)
+ax2 = fig.add_subplot(1,1,1)
 x_values0 = []
 x_values1 = []
 x_values2 = []
@@ -25,6 +29,9 @@ def threaded_function(arg):
         x_values0.append(lst[0])
         x_values1.append(lst[1])
         x_values2.append(lst[2])
+    else:
+        print("bad values:")
+        print(lst)
     while 1:
         lst = pdr.read()
         if(len(lst) == 3):
@@ -32,14 +39,18 @@ def threaded_function(arg):
             x_values0.append(lst[0])
             x_values1.append(lst[1])
             x_values2.append(lst[2])
-        
+        else:
+            print("bad values:")
+            print(lst)
         
 
 def animation_func(i):
-    ax0.clear()
-    ax0.plot(x_values0, y_queue)
-    ax1.plot(x_values1, y_queue)
-    ax2.plot(x_values2, y_queue)
+    # ax0.clear()
+    # ax0.plot(y_queue, x_values0)
+    # ax1.clear()
+    # ax1.plot(x_values1, y_queue)
+    ax2.clear()
+    ax2.plot(y_queue, x_values2)
 
 def main():
     time.sleep(3)
