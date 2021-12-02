@@ -4,7 +4,7 @@ import ArduinoToPiDataTransfer.PiDataReceiver as PDR
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QApplication, QPushButton
+from PySide2.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox
 from PySide2.QtCore import QTimer
 import sys
 import matplotlib
@@ -42,8 +42,22 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         layout.addWidget(toolbar)
         layout.addWidget(sc)
+
+        startbtn_and_cbx_groupBox = QGroupBox()
+        startbtn_and_cbx_layout = QHBoxLayout()
+
+        # setup group with startbtn and Port-selection-comboBox
         start_button = QPushButton('Start', self)
-        layout.addWidget(start_button)
+        startbtn_and_cbx_layout.addWidget(start_button)
+        self.port_cbx = QComboBox()
+        for l in PDR.PiDataReceiver.list_possible_ports():
+            s1 = ""
+            for s2 in l:
+                s1 += s2 + " "
+            self.port_cbx.addItem(s1, l[0])
+        startbtn_and_cbx_layout.addWidget(self.port_cbx)
+        startbtn_and_cbx_groupBox.setLayout(startbtn_and_cbx_layout)
+        layout.addWidget(startbtn_and_cbx_groupBox)
 
         pause_button = QPushButton('Stop', self)
         layout.addWidget(pause_button)
@@ -75,17 +89,22 @@ class MainWindow(QMainWindow):
 
     def start_button(self):
 
-        self.timer.start()
-        n_data = 40
-        self.PDR = PDR.PiDataReceiver("COM3")
-        
-        # test
-        # self.xdata = list(range(n_data))
-        # self.ydata = [0 for i in range(n_data)]
-        # testend
+        try:
+            if not hasattr(self, "PDR"):
+                self.PDR = PDR.PiDataReceiver(self.port_cbx.currentData())
+            self.timer.start()
+            
+            # test
+            # n_data = 40
+            # self.xdata = list(range(n_data))
+            # self.ydata = [0 for i in range(n_data)]
+            # testend
 
-        self.update_plot()
-        self.show()
+            self.update_plot()
+            # self.show()
+        finally:
+            pass
+        
 
     def pause_button(self):
         self.timer.stop()
