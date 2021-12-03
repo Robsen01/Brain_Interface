@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
 
         # Setup a timer to trigger the redraw by calling update_plot.
         self.timer = QTimer()
-        self.timer.setInterval(100)
+        self.timer.setInterval(500)
         self.timer.timeout.connect(self.update_plot)
 
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.

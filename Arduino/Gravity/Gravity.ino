@@ -130,9 +130,12 @@ void inloop() {
       data += envlope;
       data += dataSeperation;
     }
-    data.replace(dataSeperation, " ");
-    data.trim();
-    data.replace(" ", dataSeperation);
+    
+    data += timeStamp;
+    
+    //data.replace(dataSeperation, " ");
+    //data.trim();
+    //data.replace(" ", dataSeperation);
 
     timeStamp = micros() - timeStamp;
     Serial.println(data);

@@ -14,10 +14,11 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         
         super().__init__(port, baudrate=115200, timeout=.1, send_raw_data = True, send_filtered_data = True, send_envlope = True, data_separation=",")
         # 10000 values should store the 10 seconds
-        self.x_queue = [0 for i in range(10000)]
-        self.y_values_send_raw_data = [0 for i in range(10000)]
-        self.y_values_send_filtered_data = [0 for i in range(10000)]
-        self.y_values_send_envlope = [0 for i in range(10000)]
+        arrlen = 10000
+        self.x_queue = [0 for i in range(arrlen)]
+        self.y_values_send_raw_data = [0 for i in range(arrlen)]
+        self.y_values_send_filtered_data = [0 for i in range(arrlen)]
+        self.y_values_send_envlope = [0 for i in range(arrlen)]
         self.thread = Thread(target = self.threaded_function, args = (1, ))
         self.thread.start()
 
@@ -26,37 +27,28 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
     After that it recieves the Arduino Data and writes it to the y_values_... arrays
     '''
     def threaded_function(self, arg) -> None:
-
-        time.sleep(3)
-        PDRG.PiDataReceiverGeneric.init_arduino(self)
-        tt_start = time.thread_time()
-        lst = PDRG.PiDataReceiverGeneric.read(self)
-
-        if(len(lst) == 3):
-            self.x_queue.pop()
-            self.x_queue.insert(0, 0)
-            self.y_values_send_raw_data.pop()
-            self.y_values_send_raw_data.insert(0, lst[0])
-            self.y_values_send_filtered_data.pop()
-            self.y_values_send_filtered_data.insert(0, lst[1])
-            self.y_values_send_envlope.pop()
-            self.y_values_send_envlope.insert(0, lst[2])
-        # else:
-        #     print("bad values:")
-        #     print(lst)
-
-        while 1:
-            lst = PDRG.PiDataReceiverGeneric.read(self)
-
-            if(len(lst) == 3):
-                self.x_queue.pop()
-                self.x_queue.insert(0, time.thread_time() - tt_start)
-                self.y_values_send_raw_data.pop()
-                self.y_values_send_raw_data.insert(0, lst[0])
-                self.y_values_send_filtered_data.pop()
-                self.y_values_send_filtered_data.insert(0, lst[1])
-                self.y_values_send_envlope.pop()
-                self.y_values_send_envlope.insert(0, lst[2])
+        def write_valueLst_to_arrays(lst) ->None:
+            if(len(lst) == 4):
+                self.x_queue.pop(0)
+                self.x_queue.append(lst[3])
+                print(lst[3])
+                self.y_values_send_raw_data.pop(0)
+                self.y_values_send_raw_data.append(lst[0])
+                self.y_values_send_filtered_data.pop(0)
+                self.y_values_send_filtered_data.append(lst[1])
+                self.y_values_send_envlope.pop(0)
+                self.y_values_send_envlope.append(lst[2])
             # else:
             #     print("bad values:")
             #     print(lst)
+        
+        time.sleep(3)
+        PDRG.PiDataReceiverGeneric.init_arduino(self)
+        lst = PDRG.PiDataReceiverGeneric.read(self)
+        
+        if(len(lst) == 4):
+            write_valueLst_to_arrays(lst)
+
+        while 1:
+            lst = PDRG.PiDataReceiverGeneric.read(self)
+            write_valueLst_to_arrays(lst)
