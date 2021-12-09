@@ -1,8 +1,10 @@
 import sys
 sys.path.append('../Brain_Interface')
+sys.path.append('../UserInterface')
 import ArduinoToPiDataTransfer.PiDataReceiverGeneric as PDRG
 from threading import Thread
 import time
+import numpy as np
 
 class PiDataReceiver(PDRG.PiDataReceiverGeneric):
     '''
@@ -45,10 +47,12 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         time.sleep(3)
         PDRG.PiDataReceiverGeneric.init_arduino(self)
         lst = PDRG.PiDataReceiverGeneric.read(self)
-        
         if(len(lst) == 4):
             write_valueLst_to_arrays(lst)
 
         while 1:
             lst = PDRG.PiDataReceiverGeneric.read(self)
             write_valueLst_to_arrays(lst)
+            arr = np.array(lst)
+            
+            np.save('binaryData',arr, 'wb')

@@ -1,6 +1,6 @@
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QApplication, QPushButton
+from PySide2.QtWidgets import QLineEdit, QMainWindow, QVBoxLayout, QWidget, QApplication, QPushButton
 from PySide2.QtCore import QTimer
 import sys
 import matplotlib
@@ -38,11 +38,14 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         layout.addWidget(toolbar)
         layout.addWidget(sc)
+        threshold_field = QLineEdit()
+        layout.addWidget(threshold_field)
         start_button = QPushButton('Start', self)
         layout.addWidget(start_button)
 
         pause_button = QPushButton('Stop', self)
         layout.addWidget(pause_button)
+
 
         # Create a placeholder widget to hold our toolbar and canvas.
         widget = QWidget()
