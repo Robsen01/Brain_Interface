@@ -1,23 +1,28 @@
 import serial
 import serial.tools.list_ports
 
+
 class PiDataReceiverGeneric:
     '''
     port must be a string like 'COM3'. Retrieve possible ports with PiDataReceiver.list_possible_ports
     '''
-    def __init__(self, port, baudrate=115200, timeout=.1, send_raw_data = False, send_filtered_data = False, send_envlope = True, data_separation=",") -> None:
-        self.arduino = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
+
+    def __init__(self, port, threshold, baudrate=115200, timeout=.1, send_raw_data=False, send_filtered_data=False, send_envlope=True, data_separation=",") -> None:
+        self.arduino = serial.Serial(
+            port=port, baudrate=baudrate, timeout=timeout)
         self.send_raw_data = send_raw_data
         self.send_filtered_data = send_filtered_data
         self.send_envlope = send_envlope
         self.data_separation = data_separation
+        self.threshold = threshold
 
     '''
     wait a bit to call this function after PiDataReceiver was initiated. 2Seconds is good
     '''
+
     def init_arduino(self):
         self.clear_arduino_buffer()
-        
+
         d = self.data_separation
 
         if(self.send_raw_data):
@@ -29,12 +34,19 @@ class PiDataReceiverGeneric:
             d += "1"
         else:
             d += "0"
-        
+
         if(self.send_envlope):
             d += "1"
         else:
             d += "0"
+        
+        if(self.threshold):
+            d += str(self.threshold)
+        else:
+            d+= "0"
 
+        f = open("data.txt", "w+")
+        f.write(d)
         self.write(d)
 
     def write(self, x):
@@ -47,6 +59,7 @@ class PiDataReceiverGeneric:
     List may contain raw_data, filtered_data, envlope, depending on send_raw_data and the other attributes.
     The last value is a Timestamp of the moment when the analoge value was read
     '''
+
     def read(self):
         try:
             # data = self.arduino.read(self.arduino.in_waiting)
@@ -55,8 +68,8 @@ class PiDataReceiverGeneric:
             # data = data.split('\r\n')
             # data = data.pop()
             data = data.split(self.data_separation)
-            data = list(map(int, data)) #convert strings to int
-            
+            data = list(map(int, data))  # convert strings to int
+
         except:
             data = []
         return data
@@ -64,6 +77,7 @@ class PiDataReceiverGeneric:
     '''
         should be called before you start to read or write values for the first time after a connect, in case there are still old values in the buffer
     '''
+
     def clear_arduino_buffer(self) -> None:
         self.arduino.reset_input_buffer()
         self.arduino.reset_output_buffer()

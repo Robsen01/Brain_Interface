@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../Brain_Interface')
+sys.path.append('../../Brain_Interface')
 import ArduinoToPiDataTransfer.PiDataReceiver as PDR
 
 from matplotlib.figure import Figure
@@ -91,7 +91,7 @@ class MainWindow(QMainWindow):
 
         try:
             if not hasattr(self, "PDR"):
-                self.PDR = PDR.PiDataReceiver(self.port_cbx.currentData())
+                self.PDR = PDR.PiDataReceiver(self.port_cbx.currentData(), 80)
             self.timer.start()
             
             # test

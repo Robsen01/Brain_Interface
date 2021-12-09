@@ -10,9 +10,9 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
     Also initializes the arduino communication. 
     Also starts a thread that reads y
     '''
-    def __init__(self, port) -> None:
+    def __init__(self, port, threshold) -> None:
         
-        super().__init__(port, baudrate=115200, timeout=.1, send_raw_data = True, send_filtered_data = True, send_envlope = True, data_separation=",")
+        super().__init__(port, threshold=threshold, baudrate=115200, timeout=.1, send_raw_data = True, send_filtered_data = True, send_envlope = True, data_separation=",")
         # 10000 values should store the 10 seconds
         arrlen = 10000
         self.x_queue = [0 for i in range(arrlen)]
