@@ -31,7 +31,6 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
             if(len(lst) == 4):
                 self.x_queue.pop(0)
                 self.x_queue.append(lst[3])
-                print(lst[3])
                 self.y_values_send_raw_data.pop(0)
                 self.y_values_send_raw_data.append(lst[0])
                 self.y_values_send_filtered_data.pop(0)
