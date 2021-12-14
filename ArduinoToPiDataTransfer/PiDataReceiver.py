@@ -1,8 +1,10 @@
 import sys
 sys.path.append('../Brain_Interface')
+sys.path.append('../UserInterface')
 import ArduinoToPiDataTransfer.PiDataReceiverGeneric as PDRG
 from threading import Thread
 import time
+import numpy as np
 
 class PiDataReceiver(PDRG.PiDataReceiverGeneric):
     '''
@@ -10,9 +12,9 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
     Also initializes the arduino communication. 
     Also starts a thread that reads y
     '''
-    def __init__(self, port) -> None:
+    def __init__(self, port, threshold) -> None:
         
-        super().__init__(port, baudrate=115200, timeout=.1, send_raw_data = True, send_filtered_data = True, send_envlope = True, data_separation=",")
+        super().__init__(port, threshold=threshold, baudrate=115200, timeout=.1, send_raw_data = True, send_filtered_data = True, send_envlope = True, data_separation=",")
         # 10000 values should store the 10 seconds
         arrlen = 10000
         self.x_queue = [0 for i in range(arrlen)]
@@ -44,10 +46,12 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         time.sleep(3)
         PDRG.PiDataReceiverGeneric.init_arduino(self)
         lst = PDRG.PiDataReceiverGeneric.read(self)
-        
         if(len(lst) == 4):
             write_valueLst_to_arrays(lst)
 
         while 1:
             lst = PDRG.PiDataReceiverGeneric.read(self)
             write_valueLst_to_arrays(lst)
+            arr = np.array(lst)
+            
+            np.save('binaryData',arr, 'wb')

@@ -1,4 +1,5 @@
 #include <EMGFilters.h>
+#include <Vector>
 
 /*
 * Copyright 2017, OYMotion Inc.
@@ -57,10 +58,13 @@ int humFreq = NOTCH_FREQ_50HZ;
 // put on the sensors, and release your muscles;
 // wait a few seconds, and select the max value as the threshold;
 // any value under threshold will be set to zero
-static int Threshold = 500;
+
 
 unsigned long timeStamp;
 unsigned long timeBudget;
+
+
+static int Threshold;
 
 bool started = false;
 bool sendRawData = false;
@@ -94,6 +98,12 @@ void start() {
     }
     if(s.charAt(3) == '1') {
       sendEnvlope = true;
+    }
+    if(s.charAt(4) != "0") {
+      
+    }
+    else{
+      Threshold = 500;  
     }
     started = true;
   }

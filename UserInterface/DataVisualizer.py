@@ -1,13 +1,14 @@
 import sys
-sys.path.append('../Brain_Interface')
+sys.path.append('../../Brain_Interface')
 import ArduinoToPiDataTransfer.PiDataReceiver as PDR
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox
-from PySide2.QtCore import QTimer
+from PySide2.QtWidgets import QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox
+from PySide2.QtCore import QLine, QTimer
 import sys
 import matplotlib
+import numpy as np
 
 matplotlib.use('Qt5Agg')
 
@@ -42,13 +43,25 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         layout.addWidget(toolbar)
         layout.addWidget(sc)
+        
 
         startbtn_and_cbx_groupBox = QGroupBox()
         startbtn_and_cbx_layout = QHBoxLayout()
 
         # setup group with startbtn and Port-selection-comboBox
+        thresholdLabel = QLabel("Threshold: ")
+
+        self.threshold = QLineEdit()
+        
+
+        startbtn_and_cbx_layout.addWidget(thresholdLabel)
+        startbtn_and_cbx_layout.addWidget(self.threshold)
+
         start_button = QPushButton('Start', self)
         startbtn_and_cbx_layout.addWidget(start_button)
+
+
+
         self.port_cbx = QComboBox()
         for l in PDR.PiDataReceiver.list_possible_ports():
             s1 = ""
@@ -86,12 +99,13 @@ class MainWindow(QMainWindow):
 
         # Trigger the canvas to update and redraw.
         self.canvas.draw()
+        
 
     def start_button(self):
 
         try:
             if not hasattr(self, "PDR"):
-                self.PDR = PDR.PiDataReceiver(self.port_cbx.currentData())
+                self.PDR = PDR.PiDataReceiver(self.port_cbx.currentData(), int(self.threshold.text())) #80 is the Threshold (We only need a Textbox in the canvas to set it manually)
             self.timer.start()
             
             # test
