@@ -3,10 +3,10 @@ import serial.tools.list_ports
 
 
 class PiDataReceiverGeneric:
+
     '''
     port must be a string like 'COM3'. Retrieve possible ports with PiDataReceiver.list_possible_ports
     '''
-
     def __init__(self, port, threshold, baudrate=115200, timeout=.1, send_raw_data=False, send_filtered_data=False, send_envlope=True, data_separation=",") -> None:
         self.arduino = serial.Serial(
             port=port, baudrate=baudrate, timeout=timeout)
@@ -19,8 +19,7 @@ class PiDataReceiverGeneric:
     '''
     wait a bit to call this function after PiDataReceiver was initiated. 2Seconds is good
     '''
-
-    def init_arduino(self):
+    def init_arduino(self) -> None:
         self.clear_arduino_buffer()
 
         d = self.data_separation
@@ -49,9 +48,8 @@ class PiDataReceiverGeneric:
         f.write(d)
         self.write(d)
 
-    def write(self, x):
+    def write(self, x) -> None:
         self.arduino.write(bytes(x, 'utf-8'))
-        return
 
     '''
     reads last line that arduino send
@@ -59,7 +57,6 @@ class PiDataReceiverGeneric:
     List may contain raw_data, filtered_data, envlope, depending on send_raw_data and the other attributes.
     The last value is a Timestamp of the moment when the analoge value was read
     '''
-
     def read(self):
         try:
             # data = self.arduino.read(self.arduino.in_waiting)
@@ -75,13 +72,12 @@ class PiDataReceiverGeneric:
         return data
 
     '''
-        should be called before you start to read or write values for the first time after a connect, in case there are still old values in the buffer
+    should be called before you start to read or write values for the first time after a connect, in case there are still old values in the buffer
     '''
-
     def clear_arduino_buffer(self) -> None:
         self.arduino.reset_input_buffer()
         self.arduino.reset_output_buffer()
-        pass
+
     '''
     staticmethod
     returns list with items like this: 

@@ -23,6 +23,7 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         self.y_values_send_envlope = [0 for i in range(arrlen)]
         self.thread = Thread(target = self.threaded_function, args = (1, ))
         self.thread.start()
+        self.listeners = []
 
     '''
     After 3 seconds this thread initializes the arduino communication.
@@ -52,6 +53,21 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         while 1:
             lst = PDRG.PiDataReceiverGeneric.read(self)
             write_valueLst_to_arrays(lst)
-            arr = np.array(lst)
             
-            np.save('binaryData',arr, 'wb')
+            for func in self.listeners:
+                func(lst)
+            
+    
+    """
+    calles the given function, when new data is recieved
+    the function will recieve one parameter, which is a list with the data
+    """
+    def connect_new_data_event(self, connect_func) -> None:
+        self.listeners.append(connect_func)
+
+    """
+    disconnects the previously connected function
+    """
+    def disconnect_new_data_event(self, connect_func) -> None:
+        if self.listeners.count(connect_func) > 0:
+            self.listeners.remove(connect_func)
