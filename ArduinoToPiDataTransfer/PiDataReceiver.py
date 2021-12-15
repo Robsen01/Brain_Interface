@@ -20,7 +20,7 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
     def __init__(self, port, threshold) -> None:
         
         super().__init__(port, threshold=threshold, baudrate=115200, timeout=.1, send_raw_data = True, send_filtered_data = True, send_envlope = True, data_separation=",")
-        # 10000 values should store roughly 5 seconds
+        # 10000 values should store roughly 20 seconds
         arrlen = 10000
         # fill with zeros, so the displayed Graph does not change in length while it fills
         self.x_queue = [0 for i in range(arrlen)]

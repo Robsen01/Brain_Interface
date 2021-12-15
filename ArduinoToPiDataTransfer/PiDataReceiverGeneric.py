@@ -47,8 +47,6 @@ class PiDataReceiverGeneric:
         else:
             d+= "0"
 
-        f = open("data.txt", "w+")
-        f.write(d)
         self.write(d)
 
     '''

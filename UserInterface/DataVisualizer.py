@@ -5,7 +5,7 @@ import FileSaver.FileSaver as FileSaver
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox
+from PySide2.QtWidgets import QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox, QSizePolicy
 from PySide2.QtCore import QTimer
 import sys
 import matplotlib
@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
     def setup_graph_group(self) -> None:
         graph_group = QGroupBox()
         graph_layout = QVBoxLayout()
+
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         toolbar = NavigationToolbar(self.canvas, self)
@@ -74,9 +75,10 @@ class MainWindow(QMainWindow):
     Setup the second Groupbox, which holds the Intervalfield, the Startbtn and the Port-Combobox.
     '''
     def setup_startbtn_group(self) -> None:
-        startbtn_and_cbx_groupBox = QGroupBox()
+        startbtn_and_cbx_group = QGroupBox()
         startbtn_and_cbx_layout = QHBoxLayout()
-
+        
+        startbtn_and_cbx_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         # setup group with startbtn and Port-selection-comboBox
         thresholdLabel = QLabel("Threshold: ")
 
@@ -86,7 +88,7 @@ class MainWindow(QMainWindow):
         startbtn_and_cbx_layout.addWidget(thresholdLabel)
         startbtn_and_cbx_layout.addWidget(self.threshold)
 
-        start_button = QPushButton('Start', self)
+        start_button = QPushButton('Aufnehmen', self)
         startbtn_and_cbx_layout.addWidget(start_button)
 
         # fill combo box with items
@@ -98,8 +100,8 @@ class MainWindow(QMainWindow):
             self.port_cbx.addItem(s1, l[0])
 
         startbtn_and_cbx_layout.addWidget(self.port_cbx)
-        startbtn_and_cbx_groupBox.setLayout(startbtn_and_cbx_layout)
-        self.layout.addWidget(startbtn_and_cbx_groupBox)
+        startbtn_and_cbx_group.setLayout(startbtn_and_cbx_layout)
+        self.layout.addWidget(startbtn_and_cbx_group)
         start_button.clicked.connect(self.start_button)
 
     '''
@@ -108,6 +110,7 @@ class MainWindow(QMainWindow):
     def setup_stopbtn_group(self) -> None:
         stopbtn_group = QGroupBox()
         stopbtn_layout = QHBoxLayout()
+        stopbtn_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
 
         pause_button = QPushButton('Stop', self)
         stopbtn_layout.addWidget(pause_button)
