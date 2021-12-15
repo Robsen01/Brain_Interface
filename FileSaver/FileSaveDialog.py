@@ -3,15 +3,15 @@ sys.path.append('../../Brain_Interface')
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox
-from PySide2.QtCore import QLine, QTimer
+from PySide2.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QApplication, QGroupBox
 import sys
 import matplotlib
-import numpy as np
 
 matplotlib.use('Qt5Agg')
 
-
+'''
+Canvas, which draws the Graph that shows the Data.
+'''
 class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -19,7 +19,9 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
-
+'''
+Window, which holds the Graph and Controls.
+'''
 class FileSaveDialog(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -33,8 +35,9 @@ class FileSaveDialog(QMainWindow):
         widget.setLayout(self.layout)
         self.setCentralWidget(widget)
 
-        self.show()
-
+    '''
+    Setup the first Groupbox, which holds the Graph and the Graph-controls.
+    '''
     def setup_graph_group(self) -> None:
         graph_group = QGroupBox()
         graph_layout = QVBoxLayout()

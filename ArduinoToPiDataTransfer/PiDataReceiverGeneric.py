@@ -1,11 +1,13 @@
 import serial
 import serial.tools.list_ports
 
-
+'''
+PiDataReceiverGeneric is a very universal class, which has everything you need to communicate with the Arduino.
+'''
 class PiDataReceiverGeneric:
 
     '''
-    port must be a string like 'COM3'. Retrieve possible ports with PiDataReceiver.list_possible_ports
+    port must be a string like 'COM3'. Retrieve possible ports with PiDataReceiver.list_possible_ports.
     '''
     def __init__(self, port, threshold, baudrate=115200, timeout=.1, send_raw_data=False, send_filtered_data=False, send_envlope=True, data_separation=",") -> None:
         self.arduino = serial.Serial(
@@ -17,7 +19,8 @@ class PiDataReceiverGeneric:
         self.threshold = threshold
 
     '''
-    wait a bit to call this function after PiDataReceiver was initiated. 2Seconds is good
+    Wait a bit to call this function after PiDataReceiver was initiated. 2-3 Seconds is good.
+    This sends a string to the Arduino to configure it
     '''
     def init_arduino(self) -> None:
         self.clear_arduino_buffer()
@@ -48,31 +51,31 @@ class PiDataReceiverGeneric:
         f.write(d)
         self.write(d)
 
-    def write(self, x) -> None:
-        self.arduino.write(bytes(x, 'utf-8'))
+    '''
+    This function writes a string to the Arduino.
+    '''
+    def write(self, s) -> None:
+        self.arduino.write(bytes(s, 'utf-8'))
 
     '''
-    reads last line that arduino send
-    returns list of int. 
+    Reads last line that arduino send.
+    Returns list of int. 
     List may contain raw_data, filtered_data, envlope, depending on send_raw_data and the other attributes.
-    The last value is a Timestamp of the moment when the analoge value was read
+    The last value is a Timestamp of the moment when the analoge value was read.
     '''
     def read(self):
         try:
-            # data = self.arduino.read(self.arduino.in_waiting)
             data = self.arduino.readline()
             data = data.decode('utf-8')
-            # data = data.split('\r\n')
-            # data = data.pop()
             data = data.split(self.data_separation)
-            data = list(map(int, data))  # convert strings to int
-
+            data = list(map(int, data))  # convert strings-list to int-list
         except:
+            # when getting started Arduino sends some setup lines. This helps to ignore them
             data = []
         return data
 
     '''
-    should be called before you start to read or write values for the first time after a connect, in case there are still old values in the buffer
+    Should be called before you start to read or write values for the first time after a connect, in case there are still old values in the buffer.
     '''
     def clear_arduino_buffer(self) -> None:
         self.arduino.reset_input_buffer()
@@ -80,8 +83,9 @@ class PiDataReceiverGeneric:
 
     '''
     staticmethod
-    returns list with items like this: 
+    Returns list with items like this: 
     ('COM3', 'Arduino Due Programming Port (COM3)', 'USB VID:PID=2341:003D SNR=75330303035351300230')
+    The first String in this list that represents the Arduino must be used for the port-parameter of PiDataReceiverGeneric
     '''
     @staticmethod
     def list_possible_ports():

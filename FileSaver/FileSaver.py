@@ -4,19 +4,20 @@ from numpy import sign
 sys.path.append('../../Brain_Interface')
 
 from FileSaver.FileSaveDialog import FileSaveDialog
-
 import os
-import struct
 
-"""
-    expects the user to hook its on_new_data event to the event, where the new data appears.
-    this data is saved to a temp-file
-"""
+'''
+Expects the user to hook its on_new_data event to the event, where the new data appears.
+This data is saved to temp-files.
+'''
 class FileSaver:
-    def __init__(self, allow_pickle = False, send_raw_data = True, send_filtered_data = True, send_envlope = True, int_byte_len = 8, max_displayed_values = 100000):
-        self.allow_pickle = allow_pickle
-        # create tmp file
-        # self.temp = tempfile.TemporaryFile()
+    
+    '''
+    int_byte_len is the length of bytes used to represent one integer in the binary-files.
+    max_displayed_values is the maximal number of Values that the Graph will display.
+    '''
+    def __init__(self, send_raw_data = True, send_filtered_data = True, send_envlope = True, int_byte_len = 8, max_displayed_values = 100000):
+        # names of the temp-files
         self.tmp_time_name = "~temptime"
         self.tmp_raw_name = "~tempraw"
         self.tmp_filtered_name = "~tempfiltered"
@@ -28,7 +29,8 @@ class FileSaver:
 
         self.max_displayed_values = max_displayed_values
 
-        self.int_byte_len = 32
+        # length of bytes used to represent one integer in the binary-files
+        self.int_byte_len = int_byte_len
         
         self.remove_tmp_files()
 
@@ -36,10 +38,16 @@ class FileSaver:
 
         self.file_save_dialog = FileSaveDialog()
 
+    '''
+    Deletes the temp-files, when this class is deleted.
+    '''
     def __del__(self):
         # delete tmp file
         self.remove_tmp_files()
 
+    '''
+    Deletes the temp-files.
+    '''
     def remove_tmp_files(self):
         try:
             self.close_tmp_files()
@@ -48,9 +56,13 @@ class FileSaver:
             os.remove(self.tmp_filtered_name)
             os.remove(self.tmp_envlope_name)
         except OSError:
-            
+            print("could not delete the temp-files.")
             pass
 
+    '''
+    Openes all the temp-files.
+    Mode defines the work-mode (read = rb or append = ab).
+    '''
     def open_tmp_files(self, mode = "ab") -> None:
         self.temp_time = open(self.tmp_time_name, mode)
         if self.send_raw_data:
@@ -60,6 +72,9 @@ class FileSaver:
         if self.send_envlope:
             self.temp_envlope = open(self.tmp_envlope_name, mode)
 
+    '''
+    Closes all the temp-files.
+    '''
     def close_tmp_files(self) -> None:
         if hasattr(self, "temp_time"):
             self.temp_time.close()
@@ -70,6 +85,11 @@ class FileSaver:
             if self.send_envlope:
                 self.temp_envlope.close()
 
+    '''
+    Event-Handler which should be connected to a Event wich is fired when new Data arrives.
+    Expects the list of the Data.
+    Writes this Data to the respective Temp-file.
+    '''
     def on_new_data(self, data : list):
         if len(data)>0:
             i = 0
@@ -84,13 +104,17 @@ class FileSaver:
                 i = i+1
 
             self.temp_time.write(data[i].to_bytes(self.int_byte_len, "big", signed = True))
-            # self.tempenvelope.write(data[len(data)-2])
-            # np.save(self.f, arr)#allow_pickle=self.allow_pickle)
 
+    '''
+    Opens the FileSaveDialog-Window.
+    '''
     def show_save_dialoge(self):
         self.file_save_dialog.show()
         self.update_plot()
 
+    '''
+    Draw the Plot.
+    '''
     def update_plot(self):
         self.file_save_dialog.canvas.axes.cla()  # Clear the canvas.
 

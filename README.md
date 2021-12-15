@@ -27,3 +27,4 @@ die benötigten Module.
 
 Ich verwende übrigens Python3.7.9
 
+Wenn eines der python-scripts ausgeführt werden soll, sollte das Workingdirectory = dem Ordner des Scripts sein, da andere Dateien über sys.path.append('../../Brain_Interface') eingebunden werden

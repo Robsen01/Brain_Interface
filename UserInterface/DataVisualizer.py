@@ -6,14 +6,17 @@ import FileSaver.FileSaver as FileSaver
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from PySide2.QtWidgets import QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox
-from PySide2.QtCore import QLine, QTimer
+from PySide2.QtCore import QTimer
 import sys
 import matplotlib
 import numpy as np
 
 matplotlib.use('Qt5Agg')
 
-
+# https://matplotlib.org/3.5.0/api/backend_bases_api.html#matplotlib.backend_bases.FigureCanvasBase
+'''
+Canvas, which draws the Graph that shows the Data.
+'''
 class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -21,7 +24,9 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
-
+'''
+Main Window, which holds the Graph and Controls.
+'''
 class MainWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -32,8 +37,8 @@ class MainWindow(QMainWindow):
         self.timer.setInterval(500)
         self.timer.timeout.connect(self.update_plot)
 
+        # add the Layout and fill it with the Group boxes
         self.layout = QVBoxLayout()
-
         self.setup_graph_group()
         self.setup_startbtn_group()
         self.setup_stopbtn_group()
@@ -46,6 +51,9 @@ class MainWindow(QMainWindow):
 
         self.show()
 
+    '''
+    Setup the first Groupbox, which holds the Graph and the Graph-controls.
+    '''
     def setup_graph_group(self) -> None:
         graph_group = QGroupBox()
         graph_layout = QVBoxLayout()
@@ -56,9 +64,15 @@ class MainWindow(QMainWindow):
         graph_layout.addWidget(toolbar)
         graph_layout.addWidget(self.canvas)
 
+        # self.canvas.connect()MatplotlibMouseMotion()
+        # self.canvas.mpl_connect('button_press_event', self.onButtonPress)
+
         graph_group.setLayout(graph_layout)
         self.layout.addWidget(graph_group)
 
+    '''
+    Setup the second Groupbox, which holds the Intervalfield, the Startbtn and the Port-Combobox.
+    '''
     def setup_startbtn_group(self) -> None:
         startbtn_and_cbx_groupBox = QGroupBox()
         startbtn_and_cbx_layout = QHBoxLayout()
@@ -87,7 +101,10 @@ class MainWindow(QMainWindow):
         startbtn_and_cbx_groupBox.setLayout(startbtn_and_cbx_layout)
         self.layout.addWidget(startbtn_and_cbx_groupBox)
         start_button.clicked.connect(self.start_button)
-        
+
+    '''
+    Setup the third Groupbox, which holds the Stopbtn and the Savebtn.
+    ''' 
     def setup_stopbtn_group(self) -> None:
         stopbtn_group = QGroupBox()
         stopbtn_layout = QHBoxLayout()
@@ -103,21 +120,22 @@ class MainWindow(QMainWindow):
         pause_button.clicked.connect(self.pause_button)
         save_button.clicked.connect(self.save_button)
 
-    def update_plot(self):
-
-        # test
-        # self.ydata = self.ydata[1:] + [self.PDR.y_values_send_envlope[0]]
-        # self.canvas.axes.cla()  # Clear the canvas.
-        # self.canvas.axes.plot(self.xdata, self.ydata, 'r')
-        # testend
+    '''
+    Redraws the Plot
+    '''
+    def update_plot(self) -> None:
 
         self.canvas.axes.cla()  # Clear the canvas.
         self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_send_envlope, 'r')
 
         # Trigger the canvas to update and redraw.
         self.canvas.draw()
-        
-    def start_button(self):
+
+    '''
+    Connects to the Arduino and starts the timer, which updates the plot every x milliseconds .
+    (the update interval is defined in __init__).
+    '''
+    def start_button(self) -> None:
         connect = False
         # open connection to Arduino
         try:
@@ -133,31 +151,34 @@ class MainWindow(QMainWindow):
             self.PDR.connect_new_data_event(self.file_saver.on_new_data)
             self.timer.start()
             self.update_plot()
-            # test
-            # n_data = 40
-            # self.xdata = list(range(n_data))
-            # self.ydata = [0 for i in range(n_data)]
-            # testend
 
-            # self.show()
-            
-    def pause_button(self):
+    '''
+    Stop the graph update timer.
+    Also stop to save new data with the file_saver.
+    '''
+    def pause_button(self) -> None:
         self.timer.stop()
         
         # disconnect FileSaver-listener
         if hasattr(self, "PDR"):
             self.PDR.disconnect_new_data_event(self.file_saver.on_new_data)
 
-    def save_button(self):
+    '''
+    Shows the Save File Dialoge.
+    '''
+    def save_button(self) -> None:
         self.pause_button()
         self.file_saver.show_save_dialoge()
 
+'''
+Open the Main Window
+'''
 def main():
     app = QApplication(sys.argv)
     w = MainWindow()
     ret = app.exec_()
     sys.exit(ret)
     
-
+# only call main, if this is the main file
 if __name__ == '__main__':
     main()
