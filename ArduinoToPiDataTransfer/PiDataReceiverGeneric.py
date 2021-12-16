@@ -42,7 +42,7 @@ class PiDataReceiverGeneric:
         else:
             d += "0"
         
-        if(self.threshold):
+        if(self.threshold and type(self.threshold) == int and self.threshold > 0):
             d += str(self.threshold)
         else:
             d+= "0"

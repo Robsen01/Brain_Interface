@@ -79,7 +79,7 @@ class FileSaveDialog(QMainWindow):
         settings_layout.addWidget(self.chk_accumulate)
 
         self.txt_accumulate  = QLineEdit()
-        self.txt_accumulate.setText("0,5")
+        self.txt_accumulate.setText("1,0")
         settings_layout.addWidget(self.txt_accumulate)
 
         self.btn_save = QPushButton(text = "Speichern")

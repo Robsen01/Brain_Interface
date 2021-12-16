@@ -1,7 +1,6 @@
-#include <EMGFilters.h>
-#include <Vector>
-
 /*
+*License für den EMG-Filter von OYMotion https://github.com/oymotion/EMGFilters
+*
 * Copyright 2017, OYMotion Inc.
 * All rights reserved.
 *
@@ -32,6 +31,11 @@
 *
 */
 
+/*
+ * Teile des Codes stammen von https://wiki.dfrobot.com/Analog_EMG_Sensor_by_OYMotion_SKU_SEN0240  (29.11.2021)
+ * Dieser wurde von uns erweitert, sodass der Arduino Konfiguriert werden kann um die Threshold einzustellen und zu entscheiden, welche Daten übertragen werden sollen.
+*/
+
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #else
@@ -54,42 +58,40 @@ int sampleRate = SAMPLE_FREQ_1000HZ;
 // other inputs will bypass all the EMG_FILTER
 int humFreq = NOTCH_FREQ_50HZ;
 
-// Calibration:
-// put on the sensors, and release your muscles;
-// wait a few seconds, and select the max value as the threshold;
-// any value under threshold will be set to zero
-
-
-unsigned long timeStamp;
 unsigned long timeBudget;
 
 
-static int Threshold;
+static int Threshold; //Das Threshold für die Messdaten
+// Werte des envlope Wert unter threshold werden auf 0 gesetzt
 
-bool started = false;
-bool sendRawData = false;
-bool sendFilteredData = false;
-bool sendEnvlope = false;
-String dataSeperation = ",";
-String s = "";
+bool started = false; //Wurde der init-string vom Pi empfangen?
+bool sendRawData = false; //Sollen die Roh-messdaten an den Pi gesendet werden?
+bool sendFilteredData = false; //Sollen die gefilterten Daten an den Pi gesendet werden?
+bool sendEnvlope = false; //Sollen die gefilterten quadrierten Daten an den Pi gesendet werden?
+String dataSeperation = ","; //Wie sollen die Daten beim Übertragen getrennt werden?
 
+//erste Funktion, die Arduino ausführt
 void setup() {
-    /* add setup code here */
     myFilter.init(sampleRate, humFreq, true, true, true);
 
-    // open serial
+    // öffnet die Serial verbindung
     Serial.begin(115200);
 
     // setup for time cost measure
     // using micros()
     timeBudget = 1e6 / sampleRate;
-    // micros will overflow and auto return to zero every 70 minutes
+    // micros will overflow and auto return to zero every 70 minutes (sollte bei unseren Messungen keine Rolle spielen, weil wir keine so langen Messungen machen)
 }
 
+//Diese funktion wird ausgeführt, solange der init-string vom Pi noch nicht empfangen wurde
 void start() {
+  String s = "";
+
+  //sobald der init-string vom Pi empfangen wird werden die Variablen entsprechenden der angeforderten Konfiguration gesetzt
   if(Serial.available() > 0) {
     s = Serial.readString();
     dataSeperation = String(s.charAt(0));
+
     if(s.charAt(1) == '1') {
       sendRawData = true;
     }
@@ -99,23 +101,18 @@ void start() {
     if(s.charAt(3) == '1') {
       sendEnvlope = true;
     }
-    if(s.charAt(4) != "0") {
-      
-    }
-    else{
-      Threshold = 500;  
-    }
+    String sThreashold = s.substring(4);
+    Threshold = sThreashold.toInt();
     started = true;
   }
 }
 
+//Diese funktion wird ausgeführt, wenn der init-string vom Pi empfangen wurde und der Arduino Konfiguriert ist
 void inloop() {
-   /* add main program code here */
-    // In order to make sure the ADC sample frequence on arduino,
-    // the time cost should be measured each loop
-    /*------------start here-------------------*/
+    unsigned long timeStamp;
     timeStamp = micros();
 
+    // auslesen des Messwertes und filtern
     int Value = analogRead(SensorInputPin);
 
     // filter processing
@@ -125,7 +122,7 @@ void inloop() {
     // any value under threshold will be set to zero
     envlope = (envlope > Threshold) ? envlope : 0;
 
-    //prepare datastring
+    //Den datastring zur Übertragung vorbereiten
     String data = "";
     
     if(sendRawData) {
@@ -142,30 +139,21 @@ void inloop() {
     }
     
     data += timeStamp;
-    
-    //data.replace(dataSeperation, " ");
-    //data.trim();
-    //data.replace(" ", dataSeperation);
-
-    timeStamp = micros() - timeStamp;
     Serial.println(data);
-    
-    //Serial.print("Read Data: "); Serial.println(Value);
-    //Serial.print("Filtered Data: ");Serial.println(DataAfterFilter);
-    //Serial.print("Squared Data: ");
-    //Serial.println(envlope);
+
+    //timeStamp = micros() - timeStamp;
     //Serial.print("Filters cost time: "); Serial.println(timeStamp);
     // the filter cost average around 520 us
-
-    /*------------end here---------------------*/
     // if less than timeBudget, then you still have (timeBudget - timeStamp) to
     // do your work
-    delayMicroseconds(500);
     // if more than timeBudget, the sample rate need to reduce to
     // SAMPLE_FREQ_500HZ
+    delayMicroseconds(500);
 }
 
+// Die loop funktion wird fom Arduino in Dauerschleife ausgeführt
 void loop() {
+  //sobald das Arduino started (Konfiguriert) ist wird immer die inloop funktion ausgeführt
    if(started) {
     inloop();
    }
