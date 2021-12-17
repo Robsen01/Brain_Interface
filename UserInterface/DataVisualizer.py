@@ -1,11 +1,12 @@
 import sys
+from time import sleep
 sys.path.append('../../Brain_Interface')
 import ArduinoToPiDataTransfer.PiDataReceiver as PDR
 import FileSaver.FileSaver as FileSaver
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox, QSizePolicy
+from PySide2.QtWidgets import QGridLayout, QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox, QSizePolicy
 from PySide2.QtCore import QTimer
 import sys
 import matplotlib
@@ -33,9 +34,13 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         
         # Setup a timer to trigger the redraw by calling update_plot.
-        self.timer = QTimer()
-        self.timer.setInterval(500)
-        self.timer.timeout.connect(self.update_plot)
+        self.update_timer = QTimer()
+        self.update_timer.setInterval(500)
+        self.update_timer.timeout.connect(self.update_plot)
+
+        self.threshold_timer = QTimer()
+        self.threshold_timer.setInterval(500)
+        self.threshold_timer.timeout.connect(self.update_threshold)
 
         # add the Layout and fill it with the Group boxes
         self.layout = QVBoxLayout()
@@ -76,20 +81,29 @@ class MainWindow(QMainWindow):
     '''
     def setup_startbtn_group(self) -> None:
         startbtn_and_cbx_group = QGroupBox()
-        startbtn_and_cbx_layout = QHBoxLayout()
-        
+        startbtn_and_cbx_layout = QGridLayout()
+
+        self.threshold_config_lbl = QLabel("Drücken sie Testen, um eine Threshold zu ermitteln.")
+        startbtn_and_cbx_layout.addWidget(self.threshold_config_lbl, 1, 1, 1, 5)
+
         startbtn_and_cbx_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         # setup group with startbtn and Port-selection-comboBox
-        thresholdLabel = QLabel("Threshold: ")
-
+        threshold_label = QLabel("Threshold: ")
+        
         self.threshold = QLineEdit()
         self.threshold.setText("0")
         
-        startbtn_and_cbx_layout.addWidget(thresholdLabel)
-        startbtn_and_cbx_layout.addWidget(self.threshold)
+        startbtn_and_cbx_layout.addWidget(threshold_label, 2, 1, 1, 1)
+        startbtn_and_cbx_layout.addWidget(self.threshold, 2, 2, 1, 1)
 
-        start_button = QPushButton('Aufnehmen', self)
-        startbtn_and_cbx_layout.addWidget(start_button)
+        self.threshold_config_btn = QPushButton('Testen', self)
+        self.threshold_config_btn.clicked.connect(self.threshold_button)
+        startbtn_and_cbx_layout.addWidget(self.threshold_config_btn, 2, 3, 1, 1)
+
+        self.threshold_discard_btn = QPushButton('Verwerfen', self)
+        self.threshold_discard_btn.setEnabled(False)
+        self.threshold_discard_btn.clicked.connect(self.threshold_discard_button)
+        startbtn_and_cbx_layout.addWidget(self.threshold_discard_btn, 2, 4, 1, 1)
 
         # fill combo box with items
         self.port_cbx = QComboBox()
@@ -99,10 +113,11 @@ class MainWindow(QMainWindow):
                 s1 += s2 + " "
             self.port_cbx.addItem(s1, l[0])
 
-        startbtn_and_cbx_layout.addWidget(self.port_cbx)
+        startbtn_and_cbx_layout.addWidget(self.port_cbx, 2, 5, 1, 1)
+
+
         startbtn_and_cbx_group.setLayout(startbtn_and_cbx_layout)
         self.layout.addWidget(startbtn_and_cbx_group)
-        start_button.clicked.connect(self.start_button)
 
     '''
     Setup the third Groupbox, which holds the Stopbtn and the Savebtn.
@@ -112,16 +127,20 @@ class MainWindow(QMainWindow):
         stopbtn_layout = QHBoxLayout()
         stopbtn_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
 
+        record_button = QPushButton('Aufnehmen', self)
+        record_button.clicked.connect(self.record_button)
+        stopbtn_layout.addWidget(record_button)
+        
         pause_button = QPushButton('Stop', self)
+        pause_button.clicked.connect(self.pause_button)
         stopbtn_layout.addWidget(pause_button)
 
-        save_button = QPushButton('Save', self)
+        save_button = QPushButton('Speichern', self)
+        save_button.clicked.connect(self.save_button)
         stopbtn_layout.addWidget(save_button)
 
         stopbtn_group.setLayout(stopbtn_layout)
         self.layout.addWidget(stopbtn_group)
-        pause_button.clicked.connect(self.pause_button)
-        save_button.clicked.connect(self.save_button)
 
     '''
     Redraws the Plot
@@ -129,38 +148,104 @@ class MainWindow(QMainWindow):
     def update_plot(self) -> None:
 
         self.canvas.axes.cla()  # Clear the canvas.
-        self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_send_envlope, 'r')
+        self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_envlope, 'r')
 
         # Trigger the canvas to update and redraw.
         self.canvas.draw()
 
     '''
+    Updates the threshold_config_lbl to show the currently determined Threshold
+    '''
+    def update_threshold(self) -> None:
+        m = max(self.PDR.y_values_envlope)
+        erg_str = "Der ermittelte Wert ist: " + str(m) + " "
+        if m >= 1000:
+            erg_str = erg_str + "(Das ist sehr hoch)"
+        self.threshold_config_lbl.setText(erg_str)
+        
+
+    '''
     Connects to the Arduino and starts the timer, which updates the plot every x milliseconds .
     (the update interval is defined in __init__).
     '''
-    def start_button(self) -> None:
+    def record_button(self) -> None:
+        if(self.connect_to_Arduino(arr_len = 10000)):
+            self.PDR.connect_new_data_event(self.file_saver.on_new_data)
+            self.PDR.clear_arrays()
+            self.update_timer.start()
+            self.update_plot()
+
+    '''
+    Proposes a Threshold and writes it to the determined Threshold to the Threshold-Textbox
+    '''
+    def threshold_button(self) -> None:
+        if self.threshold_timer.isActive() == False:
+            if(self.connect_to_Arduino(send_threshold = False, arr_len = 1000)):
+                self.update_timer.start()
+                self.threshold_timer.start()
+                self.update_plot()
+                self.threshold_config_btn.setText("Übernehmen")
+                self.threshold_discard_btn.setEnabled(True)
+        else:
+            self.update_timer.stop()
+            self.threshold_timer.stop()
+            self.threshold_config_btn.setText("Testen")
+            self.threshold_discard_btn.setEnabled(False)
+            self.threshold.setText(str(max(self.PDR.y_values_envlope)))
+            
+    '''
+    Stops the Threshold testing, without writing the determined Threshold to the Threshold-Textbox
+    '''
+    def threshold_discard_button(self) -> None:
+        self.update_timer.stop()
+        self.threshold_timer.stop()
+        self.threshold_config_btn.setText("Testen")
+        self.threshold_discard_btn.setEnabled(False)
+
+    '''
+    Tries to open the Arduino-connection and returns true, if one was opened.
+    arr_len is passed to PiDataReceiver.__init__
+    send_threshold = True passes the threshold text to PiDataReceiver.__init__
+    '''
+    def connect_to_Arduino(self, send_threshold = True, arr_len = 10000) -> bool:
         connect = False
         # open connection to Arduino
         try:
-            if not hasattr(self, "PDR"):
-                self.PDR = PDR.PiDataReceiver(self.port_cbx.currentData(), int(self.threshold.text())) #80 is the Threshold (We only need a Textbox in the canvas to set it manually)
+            if hasattr(self, "PDR"):
+                self.PDR.before_delete()
+                del self.PDR
+                # delattr(self, "PDR")
+                    
+            if send_threshold:
+                self.PDR = PDR.PiDataReceiver(port = self.port_cbx.currentData(), threshold = int(self.threshold.text()), arr_len = arr_len)
+            else:
+                self.PDR = PDR.PiDataReceiver(port = self.port_cbx.currentData(), threshold = 0, arr_len = arr_len)
 
-            connect = True
+            # wait for PDR to confirm, that the arduino is on that port
+            while self.PDR.thread_running and self.PDR.port_confirmed == False:
+                pass
+
+            if self.PDR.thread_running and self.PDR.port_confirmed:
+                connect = True
+            else:
+                if hasattr(self, "PDR"):
+                    self.PDR.before_delete()
+                    del self.PDR
+                connect = False
+
         except:
-            delattr(self, 'PDR')
+            if hasattr(self, "PDR"):
+                self.PDR.before_delete()
+                del self.PDR
             connect = False
-        
-        if(connect):
-            self.PDR.connect_new_data_event(self.file_saver.on_new_data)
-            self.timer.start()
-            self.update_plot()
+        return connect
 
     '''
     Stop the graph update timer.
     Also stop to save new data with the file_saver.
     '''
     def pause_button(self) -> None:
-        self.timer.stop()
+        self.update_timer.stop()
         
         # disconnect FileSaver-listener
         if hasattr(self, "PDR"):

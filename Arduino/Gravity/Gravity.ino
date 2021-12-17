@@ -104,6 +104,7 @@ void start() {
     String sThreashold = s.substring(4);
     Threshold = sThreashold.toInt();
     started = true;
+    Serial.println("all good");
   }
 }
 

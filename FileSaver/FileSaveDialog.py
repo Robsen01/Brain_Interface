@@ -32,7 +32,7 @@ class FileSaveDialog(QMainWindow):
 
         self.setup_graph_group()
         self.setup_settings_group()
-
+        
         widget = QWidget()
         widget.setLayout(self.layout)
         self.setCentralWidget(widget)
@@ -46,7 +46,7 @@ class FileSaveDialog(QMainWindow):
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         toolbar = NavigationToolbar(self.canvas, self)
-
+        
         graph_layout.addWidget(toolbar)
         graph_layout.addWidget(self.canvas)
 

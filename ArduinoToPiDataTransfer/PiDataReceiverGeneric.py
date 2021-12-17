@@ -1,3 +1,4 @@
+from time import sleep, time_ns
 import serial
 import serial.tools.list_ports
 
@@ -10,8 +11,7 @@ class PiDataReceiverGeneric:
     port must be a string like 'COM3'. Retrieve possible ports with PiDataReceiver.list_possible_ports.
     '''
     def __init__(self, port, threshold, baudrate=115200, timeout=.1, send_raw_data=False, send_filtered_data=False, send_envlope=True, data_separation=",") -> None:
-        self.arduino = serial.Serial(
-            port=port, baudrate=baudrate, timeout=timeout)
+        self.arduino = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
         self.send_raw_data = send_raw_data
         self.send_filtered_data = send_filtered_data
         self.send_envlope = send_envlope
@@ -19,10 +19,20 @@ class PiDataReceiverGeneric:
         self.threshold = threshold
 
     '''
-    Wait a bit to call this function after PiDataReceiver was initiated. 2-3 Seconds is good.
-    This sends a string to the Arduino to configure it
+    Closes the potentialy open port to the arduino that may be connected.
+    Should be called, before disposing this object
     '''
-    def init_arduino(self) -> None:
+    def close_arduino_port(self):
+        if hasattr(self, "arduino"):
+            if not self.arduino.closed:
+                self.arduino.close()
+
+    '''
+    Wait a bit to call this function after PiDataReceiver was initiated. 2-3 Seconds is good.
+    This sends a string to the Arduino to configure it.
+    Returns true, if the Arduino responded that all is well.
+    '''
+    def init_arduino(self) -> bool:
         self.clear_arduino_buffer()
 
         d = self.data_separation
@@ -48,6 +58,28 @@ class PiDataReceiverGeneric:
             d+= "0"
 
         self.write(d)
+        self.arduino.flushOutput()
+
+        # wait till response, there will be some empty lines before the response. The loop reads them out, until the response arrives
+        time = time_ns()
+        data = ""
+        while data != "all good":
+            print(time_ns() - time)
+            print("\n")
+            data = self.arduino.readline()
+            data = data.decode('utf-8')
+            data = data.strip()
+            print(time_ns() - time)
+            print("\n" + data)
+            # wait max 1.5 s for response (takes almost exactly 1s on my machine)
+            if time_ns() - time > 1500000000:
+                break
+
+        
+        if data == "all good":
+            return True
+        
+        return False
 
     '''
     This function writes a string to the Arduino.
