@@ -3,7 +3,7 @@ import sys
 from numpy import sign
 sys.path.append('../../Brain_Interface')
 
-from FileSaver.FileSaveDialog import FileSaveDialog
+from FileExport.FileDialog import FileDialog
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 import tempfile
 import os
@@ -31,7 +31,7 @@ class FileSaver:
         
         self.open_tmp_files()
 
-        self.file_save_dialog = FileSaveDialog()
+        self.file_save_dialog = FileDialog()
 
         self.file_save_dialog.btn_save.clicked.connect(self.save_to_file)
 

@@ -64,13 +64,9 @@ class PiDataReceiverGeneric:
         time = time_ns()
         data = ""
         while data != "all good":
-            print(time_ns() - time)
-            print("\n")
             data = self.arduino.readline()
             data = data.decode('utf-8')
             data = data.strip()
-            print(time_ns() - time)
-            print("\n" + data)
             # wait max 1.5 s for response (takes almost exactly 1s on my machine)
             if time_ns() - time > 1500000000:
                 break

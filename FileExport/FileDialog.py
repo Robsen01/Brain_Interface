@@ -23,10 +23,10 @@ class MplCanvas(FigureCanvasQTAgg):
 '''
 Window, which holds the Graph and Controls.
 '''
-class FileSaveDialog(QMainWindow):
+class FileDialog(QMainWindow):
 
     def __init__(self, *args, **kwargs):
-        super(FileSaveDialog, self).__init__(*args, **kwargs)
+        super(FileDialog, self).__init__(*args, **kwargs)
 
         self.layout = QVBoxLayout()
 
@@ -36,6 +36,8 @@ class FileSaveDialog(QMainWindow):
         widget = QWidget()
         widget.setLayout(self.layout)
         self.setCentralWidget(widget)
+        self.closed = True
+        self.onclose = -1
 
     '''
     Setup the first Groupbox, which holds the Graph and the Graph-controls.
@@ -57,10 +59,10 @@ class FileSaveDialog(QMainWindow):
     Setup the second Groupbox, which holds the save-settings.
     '''
     def setup_settings_group(self) -> None:
-        settings_group = QGroupBox(title="Zu Speichernde Daten")
+        self.settings_group = QGroupBox(title="Zu Speichernde Daten")
 
         settings_layout = QHBoxLayout()
-        settings_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+        self.settings_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
         self.chk_save_raw = QCheckBox(text = "Rohdaten")
         self.chk_save_raw.setChecked(True)
@@ -85,12 +87,32 @@ class FileSaveDialog(QMainWindow):
         self.btn_save = QPushButton(text = "Speichern")
         settings_layout.addWidget(self.btn_save)
 
-        settings_group.setLayout(settings_layout)
-        self.layout.addWidget(settings_group) 
+        self.settings_group.setLayout(settings_layout)
+        self.layout.addWidget(self.settings_group) 
+
+    '''
+    called when the Window is closed with the cross-button in the corner
+    '''
+    def closeEvent(self, event) -> None:
+        self.closed = True
+        if self.onclose != -1:
+            self.onclose()
+        return super().closeEvent(event)
+        
+    def show(self) -> None:
+        self.closed = False
+        return super().show()
+
+    '''
+    connects the function to the call of the close funktion
+    '''
+    def connect_close(self, event):
+        self.onclose = event
+
 
 def main():
     app = QApplication(sys.argv)
-    w = FileSaveDialog()
+    w = FileDialog()
     ret = app.exec_()
     sys.exit(ret)
     

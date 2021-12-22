@@ -1,16 +1,16 @@
 import sys
-from time import sleep
+
+
 sys.path.append('../../Brain_Interface')
 import ArduinoToPiDataTransfer.PiDataReceiver as PDR
-import FileSaver.FileSaver as FileSaver
+from FileExport import FileOpener, FileSaver
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QGridLayout, QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox, QSizePolicy
-from PySide2.QtCore import QTimer
+from PySide2.QtWidgets import QGridLayout, QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox, QSizePolicy, QFileDialog, QMessageBox
+from PySide2.QtCore import SIGNAL, QTimer, QThread, Signal
 import sys
 import matplotlib
-import numpy as np
 
 matplotlib.use('Qt5Agg')
 
@@ -45,14 +45,15 @@ class MainWindow(QMainWindow):
         # add the Layout and fill it with the Group boxes
         self.layout = QVBoxLayout()
         self.setup_graph_group()
-        self.setup_startbtn_group()
-        self.setup_stopbtn_group()
+        self.setup_config_group()
+        self.setup_controll_group()
 
         widget = QWidget()
         widget.setLayout(self.layout)
         self.setCentralWidget(widget)
 
         self.file_saver = FileSaver.FileSaver()
+        self.fileopener = []
 
         self.show()
 
@@ -77,9 +78,9 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(graph_group)
 
     '''
-    Setup the second Groupbox, which holds the Intervalfield, the Startbtn and the Port-Combobox.
+    Setup the second Groupbox, which holds the threshold-field, the thrshold-config-buttons and the Port-Combobox.
     '''
-    def setup_startbtn_group(self) -> None:
+    def setup_config_group(self) -> None:
         startbtn_and_cbx_group = QGroupBox()
         startbtn_and_cbx_layout = QGridLayout()
 
@@ -96,48 +97,52 @@ class MainWindow(QMainWindow):
         startbtn_and_cbx_layout.addWidget(threshold_label, 2, 1, 1, 1)
         startbtn_and_cbx_layout.addWidget(self.threshold, 2, 2, 1, 1)
 
-        self.threshold_config_btn = QPushButton('Testen', self)
-        self.threshold_config_btn.clicked.connect(self.threshold_button)
-        startbtn_and_cbx_layout.addWidget(self.threshold_config_btn, 2, 3, 1, 1)
+        self.btn_threshold_config = QPushButton('Testen', self)
+        self.btn_threshold_config.clicked.connect(self.on_threshold_button)
+        startbtn_and_cbx_layout.addWidget(self.btn_threshold_config, 2, 3, 1, 1)
 
-        self.threshold_discard_btn = QPushButton('Verwerfen', self)
-        self.threshold_discard_btn.setEnabled(False)
-        self.threshold_discard_btn.clicked.connect(self.threshold_discard_button)
-        startbtn_and_cbx_layout.addWidget(self.threshold_discard_btn, 2, 4, 1, 1)
+        self.btn_threshold_discard = QPushButton('Verwerfen', self)
+        self.btn_threshold_discard.setEnabled(False)
+        self.btn_threshold_discard.clicked.connect(self.on_threshold_discard_button)
+        startbtn_and_cbx_layout.addWidget(self.btn_threshold_discard, 2, 4, 1, 1)
 
         # fill combo box with items
-        self.port_cbx = QComboBox()
+        self.cbx_port = QComboBox()
         for l in PDR.PiDataReceiver.list_possible_ports():
             s1 = ""
             for s2 in l:
                 s1 += s2 + " "
-            self.port_cbx.addItem(s1, l[0])
+            self.cbx_port.addItem(s1, l[0])
 
-        startbtn_and_cbx_layout.addWidget(self.port_cbx, 2, 5, 1, 1)
+        startbtn_and_cbx_layout.addWidget(self.cbx_port, 2, 5, 1, 1)
 
 
         startbtn_and_cbx_group.setLayout(startbtn_and_cbx_layout)
         self.layout.addWidget(startbtn_and_cbx_group)
 
     '''
-    Setup the third Groupbox, which holds the Stopbtn and the Savebtn.
+    Setup the third Groupbox, which holds the Record-button, Stop-button, Save-button and Open-button.
     ''' 
-    def setup_stopbtn_group(self) -> None:
+    def setup_controll_group(self) -> None:
         stopbtn_group = QGroupBox()
         stopbtn_layout = QHBoxLayout()
         stopbtn_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
 
-        record_button = QPushButton('Aufnehmen', self)
-        record_button.clicked.connect(self.record_button)
-        stopbtn_layout.addWidget(record_button)
+        self.btn_record = QPushButton('neue Aufnahme', self)
+        self.btn_record.clicked.connect(self.on_record_button)
+        stopbtn_layout.addWidget(self.btn_record)
         
-        pause_button = QPushButton('Stop', self)
-        pause_button.clicked.connect(self.pause_button)
-        stopbtn_layout.addWidget(pause_button)
+        self.btn_pause = QPushButton('Stop', self)
+        self.btn_pause.clicked.connect(self.on_pause_button)
+        stopbtn_layout.addWidget(self.btn_pause)
 
-        save_button = QPushButton('Speichern', self)
-        save_button.clicked.connect(self.save_button)
-        stopbtn_layout.addWidget(save_button)
+        self.btn_open = QPushButton('Speichern', self)
+        self.btn_open.clicked.connect(self.on_save_button)
+        stopbtn_layout.addWidget(self.btn_open)
+
+        self.btn_open = QPushButton('Öffnen', self)
+        self.btn_open.clicked.connect(self.on_open_button)
+        stopbtn_layout.addWidget(self.btn_open)
 
         stopbtn_group.setLayout(stopbtn_layout)
         self.layout.addWidget(stopbtn_group)
@@ -163,88 +168,82 @@ class MainWindow(QMainWindow):
             erg_str = erg_str + "(Das ist sehr hoch)"
         self.threshold_config_lbl.setText(erg_str)
         
+    '''
+    Enables or disables the UI, which interacts with the Arduino-connection
+    '''
+    def enable_PDR_UI(self, enable = True, enable_btn_threshold_discard = False):
+        self.cbx_port.setEnabled(enable)
+        self.btn_threshold_discard.setEnabled(enable_btn_threshold_discard)
+        self.btn_threshold_config.setEnabled(enable)
+        self.btn_pause.setEnabled(enable)
+        self.btn_record.setEnabled(enable)
+        self.btn_open.setEnabled(enable)
 
     '''
-    Connects to the Arduino and starts the timer, which updates the plot every x milliseconds .
-    (the update interval is defined in __init__).
+    Event is fired, when the Arduino connection for the recording is up or failed to setup
     '''
-    def record_button(self) -> None:
-        if(self.connect_to_Arduino(arr_len = 10000)):
+    def worker_record_finished(self):
+        self.enable_PDR_UI(True)
+
+        if(self.worker_threshold.arduino_connect):
             self.PDR.connect_new_data_event(self.file_saver.on_new_data)
             self.PDR.clear_arrays()
             self.update_timer.start()
             self.update_plot()
 
     '''
+    Connects to the Arduino and starts the timer, which updates the plot every x milliseconds .
+    (the update interval is defined in __init__).
+    '''
+    def on_record_button(self) -> None:
+        self.worker_threshold = connect_to_Arduino_Thread(self, True, 10000)
+        self.worker_threshold.finished.connect(self.worker_record_finished)
+        self.enable_PDR_UI(False)
+        self.worker_threshold.start()
+
+    '''
+    Event is fired, when the Arduino connection for the threshold determination is up or failed to setup
+    '''
+    def worker_threshold_finished(self):
+        self.enable_PDR_UI(True, True)
+        
+        if(self.worker_threshold.arduino_connect):
+            self.update_timer.start()
+            self.threshold_timer.start()
+            self.update_plot()
+            self.btn_threshold_config.setText("Übernehmen")
+            self.btn_threshold_discard.setEnabled(True)
+
+    '''
     Proposes a Threshold and writes it to the determined Threshold to the Threshold-Textbox
     '''
-    def threshold_button(self) -> None:
+    def on_threshold_button(self) -> None:
         if self.threshold_timer.isActive() == False:
-            if(self.connect_to_Arduino(send_threshold = False, arr_len = 1000)):
-                self.update_timer.start()
-                self.threshold_timer.start()
-                self.update_plot()
-                self.threshold_config_btn.setText("Übernehmen")
-                self.threshold_discard_btn.setEnabled(True)
+            self.worker_threshold = connect_to_Arduino_Thread(self, False, 1000)
+            self.worker_threshold.finished.connect(self.worker_threshold_finished)
+            self.enable_PDR_UI(False)
+            self.worker_threshold.start()
         else:
             self.update_timer.stop()
             self.threshold_timer.stop()
-            self.threshold_config_btn.setText("Testen")
-            self.threshold_discard_btn.setEnabled(False)
+            self.btn_threshold_config.setText("Testen")
+            self.btn_threshold_discard.setEnabled(False)
             self.threshold.setText(str(max(self.PDR.y_values_envlope)))
             
     '''
     Stops the Threshold testing, without writing the determined Threshold to the Threshold-Textbox
     '''
-    def threshold_discard_button(self) -> None:
+    def on_threshold_discard_button(self) -> None:
         self.update_timer.stop()
         self.threshold_timer.stop()
-        self.threshold_config_btn.setText("Testen")
-        self.threshold_discard_btn.setEnabled(False)
-
-    '''
-    Tries to open the Arduino-connection and returns true, if one was opened.
-    arr_len is passed to PiDataReceiver.__init__
-    send_threshold = True passes the threshold text to PiDataReceiver.__init__
-    '''
-    def connect_to_Arduino(self, send_threshold = True, arr_len = 10000) -> bool:
-        connect = False
-        # open connection to Arduino
-        try:
-            if hasattr(self, "PDR"):
-                self.PDR.before_delete()
-                del self.PDR
-                # delattr(self, "PDR")
-                    
-            if send_threshold:
-                self.PDR = PDR.PiDataReceiver(port = self.port_cbx.currentData(), threshold = int(self.threshold.text()), arr_len = arr_len)
-            else:
-                self.PDR = PDR.PiDataReceiver(port = self.port_cbx.currentData(), threshold = 0, arr_len = arr_len)
-
-            # wait for PDR to confirm, that the arduino is on that port
-            while self.PDR.thread_running and self.PDR.port_confirmed == False:
-                pass
-
-            if self.PDR.thread_running and self.PDR.port_confirmed:
-                connect = True
-            else:
-                if hasattr(self, "PDR"):
-                    self.PDR.before_delete()
-                    del self.PDR
-                connect = False
-
-        except:
-            if hasattr(self, "PDR"):
-                self.PDR.before_delete()
-                del self.PDR
-            connect = False
-        return connect
+        self.btn_threshold_config.setText("Testen")
+        self.btn_threshold_discard.setEnabled(False)
 
     '''
     Stop the graph update timer.
     Also stop to save new data with the file_saver.
     '''
-    def pause_button(self) -> None:
+    def on_pause_button(self) -> None:
         self.update_timer.stop()
         
         # disconnect FileSaver-listener
@@ -254,9 +253,91 @@ class MainWindow(QMainWindow):
     '''
     Shows the Save File Dialoge.
     '''
-    def save_button(self) -> None:
-        self.pause_button()
+    def on_save_button(self) -> None:
+        self.on_pause_button()
         self.file_saver.show_save_dialoge()
+
+    '''
+    Tries to open a csv that should contain a previous recording
+    '''
+    def on_open_button(self) -> None:
+        
+        file_selection = QFileDialog.getOpenFileName(self, "Alte Messung wählen", "", "Messungen (*.csv)")
+        
+        if file_selection[0].endswith(".csv"):
+            try:
+                fileopener = FileOpener.FileOpener(file_selection[0])
+                fileopener.show_open_dialoge()
+                fileopener.file_dialog.connect_close(self.on_fileopener_close)
+                
+                self.fileopener.append(fileopener) # append it to self, so it wont be disposed after this function
+            except:
+                msgBox = QMessageBox()
+                msgBox.setText("Die Datei konnte nicht gelesen werden.")
+                msgBox.exec()
+
+    '''
+    Event is fired, when a fileopener is closed
+    '''
+    def on_fileopener_close(self):
+        # search for the closed fileopeners and remove them from the list, so the objects will be disposed
+        indecies = []
+        for i in range(0, len(self.fileopener)):
+            if self.fileopener[i].file_dialog.closed:
+                indecies.append(i)
+
+        for i in indecies:
+            self.fileopener.pop(i)
+                
+
+
+'''
+Tries to open the Arduino-connection and sets arduino_connect = true, if one was opened.
+Doing this in a new thread is necessary, since it involves a few seconds of busy-waiting and we want to keep the ui responsive.
+'''
+class connect_to_Arduino_Thread(QThread):
+
+    '''
+    arr_len is passed to PiDataReceiver.__init__
+    send_threshold = True passes the threshold text in the MainWindow to PiDataReceiver.__init__
+    main_window should be the MainWindow-instance, since it is the parent of this thread
+    '''
+    def __init__(self, main_window : MainWindow, send_threshold, arr_len) -> None:
+        self.arduino_connect = False
+        self.send_threshold = send_threshold
+        self.mw = main_window
+        self.arr_len = arr_len
+        super().__init__(parent=main_window)
+
+    def run(self) -> None:
+        # open connection to Arduino
+        try:
+            if hasattr(self.mw, "PDR"):
+                self.mw.PDR.before_delete()
+                del self.mw.PDR
+                    
+            if self.send_threshold:
+                self.mw.PDR = PDR.PiDataReceiver(port = self.mw.cbx_port.currentData(), threshold = int(self.mw.threshold.text()), arr_len = self.arr_len)
+            else:
+                self.mw.PDR = PDR.PiDataReceiver(port = self.mw.cbx_port.currentData(), threshold = 0, arr_len = self.arr_len)
+
+            # wait for PDR to confirm, that the arduino is on that port
+            while self.mw.PDR.thread_running and self.mw.PDR.port_confirmed == False:
+                pass
+
+            if self.mw.PDR.thread_running and self.mw.PDR.port_confirmed:
+                self.arduino_connect = True
+            else:
+                if hasattr(self.mw, "PDR"):
+                    self.mw.PDR.before_delete()
+                    del self.mw.PDR
+                self.arduino_connect = False
+
+        except:
+            if hasattr(self.mw, "PDR"):
+                self.mw.PDR.before_delete()
+                del self.mw.PDR
+            self.arduino_connect = False
 
 '''
 Open the Main Window
