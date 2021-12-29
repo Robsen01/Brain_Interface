@@ -160,11 +160,12 @@ class FileSaver:
                 self.temp_filtered.seek(0)
                 self.temp_envlope.seek(0)
 
-                accumulated_ok = False
+                file_ok = False
                 if self.file_save_dialog.chk_accumulate.isChecked():
-                    accumulated_ok = self.save_accumulate(file)
+                    file_ok = self.save_accumulate(file)
                 else:
                     self.save_dont_accumulate(file)
+                    file_ok = True
                 
                 # set the filepositions to the old positions
                 self.temp_time.seek(pos_time)
@@ -174,7 +175,7 @@ class FileSaver:
 
                 file.close()
                 
-                if not accumulated_ok:
+                if not file_ok:
                     os.remove(file_selection[0])
 
             except:

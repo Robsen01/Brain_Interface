@@ -4,7 +4,7 @@ sys.path.append('../../Brain_Interface')
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QMainWindow, QSizePolicy, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QGroupBox, QCheckBox, QPushButton, QLineEdit
+from PySide2.QtWidgets import QMainWindow, QSizePolicy, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QGroupBox, QCheckBox, QPushButton, QLineEdit, QGridLayout
 import sys
 import matplotlib
 
@@ -44,13 +44,19 @@ class FileDialog(QMainWindow):
     '''
     def setup_graph_group(self) -> None:
         graph_group = QGroupBox()
-        graph_layout = QVBoxLayout()
-        # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
+        graph_layout = QGridLayout()
+
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
-        toolbar = NavigationToolbar(self.canvas, self)
+        graph_layout.addWidget(self.canvas, 2, 1, 1, 3)
         
-        graph_layout.addWidget(toolbar)
-        graph_layout.addWidget(self.canvas)
+        toolbar = NavigationToolbar(self.canvas, self)
+        graph_layout.addWidget(toolbar, 1, 1, 1, 1)
+
+        self.btn_prev_values = QPushButton("<<")
+        graph_layout.addWidget(self.btn_prev_values, 1, 2, 1, 1)
+
+        self.btn_next_values = QPushButton(">>")
+        graph_layout.addWidget(self.btn_next_values, 1, 3, 1, 1)
 
         graph_group.setLayout(graph_layout)
         self.layout.addWidget(graph_group)                
@@ -113,6 +119,7 @@ class FileDialog(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     w = FileDialog()
+    w.show()
     ret = app.exec_()
     sys.exit(ret)
     
