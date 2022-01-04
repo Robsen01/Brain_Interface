@@ -115,7 +115,7 @@ class FileOpener:
     def update_plot(self):
         self.file_dialog.canvas.axes.cla()  # Clear the canvas.
 
-        # TODO achsen beschriften und alle values[2],[3] anzeigen
+        # TODO achsen beschriften
         self.file_dialog.canvas.axes.plot(self.values[0], self.values[1], 'r')
         # Trigger the canvas to update and redraw.
         self.file_dialog.canvas.draw()

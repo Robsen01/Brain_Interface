@@ -1,6 +1,7 @@
 from time import sleep, time_ns
 import serial
 import serial.tools.list_ports
+import math
 
 '''
 PiDataReceiverGeneric is a very universal class, which has everything you need to communicate with the Arduino.
@@ -116,3 +117,36 @@ class PiDataReceiverGeneric:
     @staticmethod
     def list_possible_ports():
         return list(serial.tools.list_ports.comports())
+
+    '''
+    staticmethod
+    should be used to convert the recieved timestamp from nanoseconds to seconds
+    '''
+    @staticmethod
+    def time_to_s(ns_value) -> float:
+        # /1000000 converts the nanoseconds to seconds
+        return ns_value/1000000
+
+    '''
+    staticmethod
+    converts the raw integer to the measured mV value
+    '''
+    @staticmethod
+    def raw_to_mV(value) -> float:
+        # https://www.arduino.cc/reference/en/language/functions/analog-io/analogread/
+        # value*(5/1024) - 1.5
+        # value[total steps measured by the adc.] *(5/1024)[1 step of the adc. in V]  - 1.5[the Sensor maps the detectionrange of +/- 1,5mV to a positive range between 0-3V. We reverse that here]
+        # the result is a value between -1.5mV and + 1.5mV
+        return value*5/1024 - 1.5
+
+    '''
+    staticmethod
+    converts the raw integer to the measured mV value
+    '''
+    @staticmethod
+    def filtered_to_mV(value) -> float:
+        # https://www.arduino.cc/reference/en/language/functions/analog-io/analogread/
+        # value*(5/1024)
+        # value[total steps measured by the adc. and filtered] *(5/1024)[1 step of the adc. in V]
+        # the result is a value roughly between -1.5mV and + 1.5mV.
+        return value*5/1024

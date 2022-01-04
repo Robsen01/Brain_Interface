@@ -5,6 +5,7 @@ sys.path.append('../../Brain_Interface')
 
 from FileExport.FileDialog import FileDialog
 from PySide2.QtWidgets import QFileDialog, QMessageBox
+import ArduinoToPiDataTransfer.PiDataReceiverGeneric as PDRG
 import tempfile
 import os
 
@@ -18,7 +19,7 @@ class FileSaver:
     int_byte_len is the length of bytes used to represent one integer in the binary-files.
     max_displayed_values is the maximal number of Values that the Graph will display.
     '''
-    def __init__(self, send_raw_data = True, send_filtered_data = True, send_envlope = True, int_byte_len = 8, max_displayed_values = 100000):
+    def __init__(self, send_raw_data = True, send_filtered_data = True, send_envlope = True, int_byte_len = 8, max_displayed_values = 1000000):
         
         self.send_raw_data = send_raw_data
         self.send_filtered_data = send_filtered_data
@@ -34,6 +35,12 @@ class FileSaver:
         self.file_save_dialog = FileDialog()
 
         self.file_save_dialog.btn_save.clicked.connect(self.save_to_file)
+        self.file_save_dialog.rdb_save_raw.clicked.connect(self.on_rdb_raw)
+        self.file_save_dialog.rdb_save_filtered.clicked.connect(self.on_rdb_filtered)
+        self.file_save_dialog.rdb_save_envlope.clicked.connect(self.on_rdb_envlope)
+        
+        self.file_save_dialog.btn_next_values.setVisible(False)
+        self.file_save_dialog.btn_prev_values.setVisible(False)
 
     '''
     Openes all the temp-files. Mode is append and read binary.
@@ -85,25 +92,51 @@ class FileSaver:
     '''
     def show_save_dialoge(self):
         self.file_save_dialog.show()
-        self.update_plot()
+        self.update_plot(raw=False, filtered=False, envlope=True)
 
     '''
-    Draw the Plot.
+    Radio button event, when it is clicked. Shows the raw data in the plot.
     '''
-    def update_plot(self):
-        self.file_save_dialog.canvas.axes.cla()  # Clear the canvas.
+    def on_rdb_raw(self):
+        self.update_plot(raw=True, filtered=False, envlope=False)
 
-        # self.close_tmp_files()
-        # self.open_tmp_files(mode="rb")
+    '''
+    Radio button event, when it is clicked. Shows the filtered data in the plot.
+    '''
+    def on_rdb_filtered(self):
+        self.update_plot(raw=False, filtered=True, envlope=False)
+
+    '''
+    Radio button event, when it is clicked. Shows the envlope data in the plot.
+    '''
+    def on_rdb_envlope(self):
+        self.update_plot(raw=False, filtered=False, envlope=True)
+
+    '''
+    Show the plot with either the raw, filtered or envlope data.
+    Only one of the Parameters should be true.
+    '''
+    def update_plot(self, raw = False, filtered = False, envlope = True):
+        self.file_save_dialog.canvas.axes.cla()
+
         x = []
         y = []
         
-        # read the files and save the filepositions before
+        # read the files and save the filepositions from before
         self.temp_time.flush()
-        self.temp_envlope.flush()
+        temp_y_file = 0
+
+        if raw:
+            temp_y_file = self.temp_raw
+        elif filtered:
+            temp_y_file = self.temp_filtered
+        else:
+            temp_y_file = self.temp_envlope
+
+        temp_y_file.flush()
 
         time_pos = self.temp_time.tell()
-        envlope_pos = self.temp_time.tell()
+        y_file_pos = temp_y_file.tell()
         
         i = 0
         self.temp_time.seek(0)
@@ -112,25 +145,39 @@ class FileSaver:
             if not bytex:
                 # eof
                 break
-            x.append(int.from_bytes(bytex, byteorder="big", signed = True))
+            x.append(
+                PDRG.PiDataReceiverGeneric.time_to_s(
+                    int.from_bytes(bytex, byteorder="big", signed = True)))
             i = i + 1
 
         i = 0
-        self.temp_envlope.seek(0)
+        temp_y_file.seek(0)
         while i < self.max_displayed_values:
-            bytey = self.temp_envlope.read(self.int_byte_len)
+            bytey = temp_y_file.read(self.int_byte_len)
             if not bytey:
                 # eof
                 break
-            y.append(int.from_bytes(bytey, byteorder="big", signed = True))
+
+            if raw:
+                y.append(
+                    PDRG.PiDataReceiverGeneric.raw_to_mV(
+                        int.from_bytes(bytey, byteorder="big", signed = True)))
+            elif filtered:
+                y.append(
+                    PDRG.PiDataReceiverGeneric.filtered_to_mV(
+                        int.from_bytes(bytey, byteorder="big", signed = True)))
+            else:
+                y.append(int.from_bytes(bytey, byteorder="big", signed = True))
+            
             i = i + 1
 
         # set the filepositions to the old positions
         self.temp_time.seek(time_pos)
-        self.temp_envlope.seek(envlope_pos)
+        temp_y_file.seek(y_file_pos)
         
+        # TODO Plot beschriften
+
         self.file_save_dialog.canvas.axes.plot(x, y, 'r')
-        # Trigger the canvas to update and redraw.
         self.file_save_dialog.canvas.draw()
 
     '''
@@ -153,21 +200,19 @@ class FileSaver:
                 pos_time = self.temp_time.tell()
                 pos_raw = self.temp_raw.tell()
                 pos_filtered = self.temp_filtered.tell()
-                pos_envlope = self.temp_time.tell()
+                pos_envlope = self.temp_envlope.tell()
 
                 self.temp_time.seek(0)
                 self.temp_raw.seek(0)
                 self.temp_filtered.seek(0)
                 self.temp_envlope.seek(0)
 
-                file_ok = False
+                file_ok = True
                 if self.file_save_dialog.chk_accumulate.isChecked():
-                    file_ok = self.save_accumulate(file)
+                    file_ok = self.save_cumulate(file)
                 else:
-                    self.save_dont_accumulate(file)
-                    file_ok = True
+                    self.save_dont_cumulate(file)
                 
-                # set the filepositions to the old positions
                 self.temp_time.seek(pos_time)
                 self.temp_raw.seek(pos_raw)
                 self.temp_filtered.seek(pos_filtered)
@@ -175,6 +220,7 @@ class FileSaver:
 
                 file.close()
                 
+                # if the kommulieren-textfield had a bad value
                 if not file_ok:
                     os.remove(file_selection[0])
 
@@ -190,15 +236,15 @@ class FileSaver:
     '''
     Save the data without accumulating timesteps.
     '''    
-    def save_dont_accumulate(self, file) -> None:
+    def save_dont_cumulate(self, file) -> None:
 
         file.write("Zeitpunkt (s)")
         
-        if self.file_save_dialog.chk_save_raw.isChecked():
-            file.write(",Rohdaten")
-        if self.file_save_dialog.chk_save_filtered.isChecked():
+        if self.file_save_dialog.rdb_save_raw.isChecked():
+            file.write(",Rohdaten (mV)")
+        if self.file_save_dialog.rdb_save_filtered.isChecked():
             file.write(",gefilterte Daten")
-        if self.file_save_dialog.chk_save_envlope.isChecked():
+        if self.file_save_dialog.rdb_save_envlope.isChecked():
             file.write(",gefilterte quadriert")
         file.write("\n")
 
@@ -208,24 +254,33 @@ class FileSaver:
                 # eof
                 break
             
-            file.write(str(int.from_bytes(byte_time, byteorder="big", signed = True)/1000000))
+            file.write(str(
+                PDRG.PiDataReceiverGeneric.time_to_s(
+                    int.from_bytes(byte_time, byteorder="big", signed = True))))
 
-            if self.file_save_dialog.chk_save_raw.isChecked():
+            if self.file_save_dialog.rdb_save_raw.isChecked():
                 byte_raw = self.temp_raw.read(self.int_byte_len)
-                file.write("," + str(int.from_bytes(byte_raw, byteorder="big", signed = True)))
-            if self.file_save_dialog.chk_save_filtered.isChecked():
+                file.write("," + str(
+                    PDRG.PiDataReceiverGeneric.raw_to_mV(
+                        int.from_bytes(byte_raw, byteorder="big", signed = True))))
+
+            if self.file_save_dialog.rdb_save_filtered.isChecked():
                 byte_filtered = self.temp_filtered.read(self.int_byte_len)
-                file.write("," + str(int.from_bytes(byte_filtered, byteorder="big", signed = True)))
-            if self.file_save_dialog.chk_save_envlope.isChecked():
+                file.write("," + str(
+                    PDRG.PiDataReceiverGeneric.filtered_to_mV(
+                        int.from_bytes(byte_filtered, byteorder="big", signed = True))))
+
+            if self.file_save_dialog.rdb_save_envlope.isChecked():
                 byte_envlope = self.temp_envlope.read(self.int_byte_len)
                 file.write("," + str(int.from_bytes(byte_envlope, byteorder="big", signed = True)))
+
             file.write("\n")
 
     '''
-    Save the data accumulated. The accumulation step-size is in the Dialogs Textbox.
+    Save the data cumulated. The accumulation step-size is in the Dialogs Textbox.
     '''
-    def save_accumulate(self, file) -> bool:
-        time_accumulate = 0
+    def save_cumulate(self, file) -> bool:
+        time_cumulate = 0
         time_step = -1
         time_next = -1
         values = 0
@@ -233,11 +288,11 @@ class FileSaver:
         summed_filtered = 0
         summed_envlope = 0
 
-        # check accumulate value
+        # check cumulate value
         if self.file_save_dialog.chk_accumulate.isChecked():
             try:
                 # *1000000 to convert seconds to nanoseconds
-                time_accumulate = float(self.file_save_dialog.txt_accumulate.text().replace(",", "."))*1000000
+                time_cumulate = float(self.file_save_dialog.txt_cumulate.text().replace(",", "."))*1000000
             except:
                 msgBox = QMessageBox()
                 msgBox.setText("Konnte das Textfeld kommulieren nicht auslesen.\nBitte geben sie eine ganze Zahl z.B. 1 oder gleitkommazahl z.B.1,1 ein.")
@@ -246,12 +301,15 @@ class FileSaver:
 
         file.write("Zeitpunkt (s)")
 
-        if self.file_save_dialog.chk_save_raw.isChecked():
-            file.write(",Rohdaten")
-        if self.file_save_dialog.chk_save_filtered.isChecked():
+        if self.file_save_dialog.rdb_save_raw.isChecked():
+            file.write(",Rohdaten (mV)")
+
+        if self.file_save_dialog.rdb_save_filtered.isChecked():
             file.write(",gefilterte Daten")
-        if self.file_save_dialog.chk_save_envlope.isChecked():
+
+        if self.file_save_dialog.rdb_save_envlope.isChecked():
             file.write(",gefilterte quadriert")
+
         file.write("\n")
 
         while True:
@@ -264,45 +322,57 @@ class FileSaver:
             
             if time_step == -1:
                 time_step = time
-                time_next = time_step + time_accumulate
+                time_next = time_step + time_cumulate
 
             if time_next > time:
+                # cummulate, while the next time step is not reached
                 values = values + 1
         
-                if self.file_save_dialog.chk_save_raw.isChecked():
+                if self.file_save_dialog.rdb_save_raw.isChecked():
                     byte_raw = self.temp_raw.read(self.int_byte_len)
                     summed_raw = summed_raw + int.from_bytes(byte_raw, byteorder="big", signed = True)
-                if self.file_save_dialog.chk_save_filtered.isChecked():
+
+                if self.file_save_dialog.rdb_save_filtered.isChecked():
                     byte_filtered = self.temp_filtered.read(self.int_byte_len)
                     summed_filtered = summed_filtered + int.from_bytes(byte_filtered, byteorder="big", signed = True)
-                if self.file_save_dialog.chk_save_envlope.isChecked():
+
+                if self.file_save_dialog.rdb_save_envlope.isChecked():
                     byte_envlope = self.temp_envlope.read(self.int_byte_len)
                     summed_envlope = summed_envlope + int.from_bytes(byte_envlope, byteorder="big", signed = True)
             else:
-                file.write(str(time_step/1000000))
+                # we reached the next timestep. Write the values to file
+                file.write(str(PDRG.PiDataReceiverGeneric.time_to_s(time_step)))
                 
-                if self.file_save_dialog.chk_save_raw.isChecked():
+                if self.file_save_dialog.rdb_save_raw.isChecked():
                     byte_raw = self.temp_raw.read(self.int_byte_len)
-                    file.write("," + str(summed_raw/values))
-                if self.file_save_dialog.chk_save_filtered.isChecked():
+                    file.write("," + str(
+                        PDRG.PiDataReceiverGeneric.raw_to_mV(summed_raw/values)))
+
+                if self.file_save_dialog.rdb_save_filtered.isChecked():
                     byte_filtered = self.temp_filtered.read(self.int_byte_len)
-                    file.write("," + str(summed_filtered/values))
-                if self.file_save_dialog.chk_save_envlope.isChecked():
+                    file.write("," + str(
+                        PDRG.PiDataReceiverGeneric.filtered_to_mV(summed_filtered/values)))
+
+                if self.file_save_dialog.rdb_save_envlope.isChecked():
                     byte_envlope = self.temp_envlope.read(self.int_byte_len)
                     file.write("," + str(summed_envlope/values))
+
                 file.write("\n")
 
-                values = 0
+                # start to cummulate the first values of the next step
+                values = 1
                 time_step = time_next
-                time_next = time_next + time_accumulate
+                time_next = time_next + time_cumulate
 
-                if self.file_save_dialog.chk_save_raw.isChecked():
+                if self.file_save_dialog.rdb_save_raw.isChecked():
                     byte_raw = self.temp_raw.read(self.int_byte_len)
                     summed_raw = int.from_bytes(byte_raw, byteorder="big", signed = True)
-                if self.file_save_dialog.chk_save_filtered.isChecked():
+
+                if self.file_save_dialog.rdb_save_filtered.isChecked():
                     byte_filtered = self.temp_filtered.read(self.int_byte_len)
                     summed_filtered =  int.from_bytes(byte_filtered, byteorder="big", signed = True)
-                if self.file_save_dialog.chk_save_envlope.isChecked():
+
+                if self.file_save_dialog.rdb_save_envlope.isChecked():
                     byte_envlope = self.temp_envlope.read(self.int_byte_len)
                     summed_envlope =  int.from_bytes(byte_envlope, byteorder="big", signed = True)
         return True

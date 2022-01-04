@@ -25,8 +25,8 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         self.arrlen = arr_len
         # fill with zeros, so the displayed Graph does not change in length while it fills
         self.x_queue = [0 for i in range(self.arrlen)]
-        self.y_values_raw_data = [0 for i in range(self.arrlen)]
-        self.y_values_filtered_data = [0 for i in range(self.arrlen)]
+        self.y_values_raw = [0 for i in range(self.arrlen)]
+        self.y_values_filtered = [0 for i in range(self.arrlen)]
         self.y_values_envlope = [0 for i in range(self.arrlen)]
         self.thread = Thread(target = self.threaded_function, args = (1, ))
         
@@ -66,15 +66,14 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
             lst = PDRG.PiDataReceiverGeneric.read(self)
 
             if(len(lst) == 4):
-                self.y_values_raw_data.pop(0)
-                self.y_values_raw_data.append(lst[0])
-                self.y_values_filtered_data.pop(0)
-                self.y_values_filtered_data.append(lst[1])
+                self.y_values_raw.pop(0)
+                self.y_values_raw.append(PDRG.PiDataReceiverGeneric.raw_to_mV(lst[0]))
+                self.y_values_filtered.pop(0)
+                self.y_values_filtered.append(PDRG.PiDataReceiverGeneric.filtered_to_mV(lst[1]))
                 self.y_values_envlope.pop(0)
                 self.y_values_envlope.append(lst[2])
                 self.x_queue.pop(0)
-                # /1000000 converts the nanoseconds to seconds
-                self.x_queue.append(lst[3]/1000000)
+                self.x_queue.append(PDRG.PiDataReceiverGeneric.time_to_s(lst[3]))
             
             # signal data-listeners
             for func in self.listeners:
@@ -83,8 +82,6 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
             if not self.thread_running:
                 return
 
-            
-    
     """
     Connect to Event so the given function is called when new data is recieved.
     The function will recieve one parameter, which is a list with the data.
@@ -103,8 +100,8 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         if x_queue == True:
             self.x_queue = [0 for i in range(self.arrlen)]
         if y_values_raw_data == True:
-            self.y_values_raw_data = [0 for i in range(self.arrlen)]
+            self.y_values_raw = [0 for i in range(self.arrlen)]
         if y_values_filtered_data == True:
-            self.y_values_filtered_data = [0 for i in range(self.arrlen)]
+            self.y_values_filtered = [0 for i in range(self.arrlen)]
         if y_values_envlope == True:
             self.y_values_envlope = [0 for i in range(self.arrlen)]

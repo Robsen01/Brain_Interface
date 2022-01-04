@@ -1,13 +1,12 @@
 import sys
 
-
 sys.path.append('../../Brain_Interface')
 import ArduinoToPiDataTransfer.PiDataReceiver as PDR
 from FileExport import FileOpener, FileSaver
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QGridLayout, QLabel, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox, QSizePolicy, QFileDialog, QMessageBox
+from PySide2.QtWidgets import QGridLayout, QLabel, QMainWindow, QLineEdit, QRadioButton, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QPushButton, QComboBox, QGroupBox, QSizePolicy, QFileDialog, QMessageBox
 from PySide2.QtCore import SIGNAL, QTimer, QThread, Signal
 import sys
 import matplotlib
@@ -62,17 +61,25 @@ class MainWindow(QMainWindow):
     '''
     def setup_graph_group(self) -> None:
         graph_group = QGroupBox()
-        graph_layout = QVBoxLayout()
+        graph_layout = QGridLayout()
 
-        # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        graph_layout.addWidget(self.canvas, 2, 1, 1, 4)
+
         toolbar = NavigationToolbar(self.canvas, self)
+        graph_layout.addWidget(toolbar, 1, 1, 1, 1)
 
-        graph_layout.addWidget(toolbar)
-        graph_layout.addWidget(self.canvas)
+        self.rdb_raw = QRadioButton("Rohdaten")
+        self.rdb_raw.setChecked(False)
+        graph_layout.addWidget(self.rdb_raw, 1, 2, 1, 1)
 
-        # self.canvas.connect()MatplotlibMouseMotion()
-        # self.canvas.mpl_connect('button_press_event', self.onButtonPress)
+        self.rdb_filtered = QRadioButton("gefiltert")
+        self.rdb_filtered.setChecked(False)
+        graph_layout.addWidget(self.rdb_filtered, 1, 3, 1, 1)
+
+        self.rdb_envlope = QRadioButton("envelope")
+        self.rdb_envlope.setChecked(True)
+        graph_layout.addWidget(self.rdb_envlope, 1, 4, 1, 1)
 
         graph_group.setLayout(graph_layout)
         self.layout.addWidget(graph_group)
@@ -84,7 +91,8 @@ class MainWindow(QMainWindow):
         startbtn_and_cbx_group = QGroupBox()
         startbtn_and_cbx_layout = QGridLayout()
 
-        self.threshold_config_lbl = QLabel("Drücken sie Testen, um eine Threshold zu ermitteln.")
+        self.threshold_config_lbl_text = "Drücken sie Testen, um eine Threshold zu ermitteln. Der Wert bezieht sich auf den envelope Plot."
+        self.threshold_config_lbl = QLabel(self.threshold_config_lbl_text)
         startbtn_and_cbx_layout.addWidget(self.threshold_config_lbl, 1, 1, 1, 5)
 
         startbtn_and_cbx_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
@@ -136,9 +144,9 @@ class MainWindow(QMainWindow):
         self.btn_pause.clicked.connect(self.on_pause_button)
         stopbtn_layout.addWidget(self.btn_pause)
 
-        self.btn_open = QPushButton('Speichern', self)
-        self.btn_open.clicked.connect(self.on_save_button)
-        stopbtn_layout.addWidget(self.btn_open)
+        self.btn_save = QPushButton('Speichern', self)
+        self.btn_save.clicked.connect(self.on_save_button)
+        stopbtn_layout.addWidget(self.btn_save)
 
         self.btn_open = QPushButton('Öffnen', self)
         self.btn_open.clicked.connect(self.on_open_button)
@@ -153,8 +161,14 @@ class MainWindow(QMainWindow):
     def update_plot(self) -> None:
 
         self.canvas.axes.cla()  # Clear the canvas.
-        self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_envlope, 'r')
+        if self.rdb_raw.isChecked():
+            self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_raw, 'r')
+        elif self.rdb_filtered.isChecked():
+            self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_filtered, 'r')
+        else:
+            self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_envlope, 'r')
 
+        # TODO plot beschriften
         # Trigger the canvas to update and redraw.
         self.canvas.draw()
 
@@ -178,6 +192,8 @@ class MainWindow(QMainWindow):
         self.btn_pause.setEnabled(enable)
         self.btn_record.setEnabled(enable)
         self.btn_open.setEnabled(enable)
+        self.btn_save.setEnabled(enable)
+        
 
     '''
     Event is fired, when the Arduino connection for the recording is up or failed to setup
@@ -229,6 +245,7 @@ class MainWindow(QMainWindow):
             self.btn_threshold_config.setText("Testen")
             self.btn_threshold_discard.setEnabled(False)
             self.threshold.setText(str(max(self.PDR.y_values_envlope)))
+            self.threshold_config_lbl.setText(self.threshold_config_lbl_text)
             
     '''
     Stops the Threshold testing, without writing the determined Threshold to the Threshold-Textbox
@@ -238,6 +255,7 @@ class MainWindow(QMainWindow):
         self.threshold_timer.stop()
         self.btn_threshold_config.setText("Testen")
         self.btn_threshold_discard.setEnabled(False)
+        self.threshold_config_lbl.setText(self.threshold_config_lbl_text)
 
     '''
     Stop the graph update timer.

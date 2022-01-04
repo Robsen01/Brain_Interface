@@ -4,7 +4,7 @@ sys.path.append('../../Brain_Interface')
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from PySide2.QtWidgets import QMainWindow, QSizePolicy, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QGroupBox, QCheckBox, QPushButton, QLineEdit, QGridLayout
+from PySide2.QtWidgets import QMainWindow, QSizePolicy, QVBoxLayout, QHBoxLayout, QWidget, QApplication, QGroupBox, QCheckBox, QPushButton, QLineEdit, QGridLayout, QRadioButton
 import sys
 import matplotlib
 
@@ -70,25 +70,25 @@ class FileDialog(QMainWindow):
         settings_layout = QHBoxLayout()
         self.settings_group.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
-        self.chk_save_raw = QCheckBox(text = "Rohdaten")
-        self.chk_save_raw.setChecked(True)
-        settings_layout.addWidget(self.chk_save_raw)
+        self.rdb_save_raw = QRadioButton(text = "Rohdaten")
+        self.rdb_save_raw.setChecked(False)
+        settings_layout.addWidget(self.rdb_save_raw)
 
-        self.chk_save_filtered = QCheckBox(text = "gefilterte Daten")
-        self.chk_save_filtered.setChecked(True)
-        settings_layout.addWidget(self.chk_save_filtered)
+        self.rdb_save_filtered = QRadioButton(text = "gefilterte Daten")
+        self.rdb_save_filtered.setChecked(False)
+        settings_layout.addWidget(self.rdb_save_filtered)
 
-        self.chk_save_envlope = QCheckBox(text = "gefiltert & quadriert")
-        self.chk_save_envlope.setChecked(True)
-        settings_layout.addWidget(self.chk_save_envlope)
+        self.rdb_save_envlope = QRadioButton(text = "envelope")
+        self.rdb_save_envlope.setChecked(True)
+        settings_layout.addWidget(self.rdb_save_envlope)
 
-        self.chk_accumulate  = QCheckBox(text = "komulieren")
+        self.chk_accumulate  = QCheckBox(text = "kumuliert")
         self.chk_accumulate .setChecked(True)
         settings_layout.addWidget(self.chk_accumulate)
 
-        self.txt_accumulate  = QLineEdit()
-        self.txt_accumulate.setText("1,0")
-        settings_layout.addWidget(self.txt_accumulate)
+        self.txt_cumulate  = QLineEdit()
+        self.txt_cumulate.setText("0,2")
+        settings_layout.addWidget(self.txt_cumulate)
 
         self.btn_save = QPushButton(text = "Speichern")
         settings_layout.addWidget(self.btn_save)
