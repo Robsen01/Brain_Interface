@@ -117,12 +117,10 @@ class FileSaver:
     Only one of the Parameters should be true.
     '''
     def update_plot(self, raw = False, filtered = False, envlope = True):
-        self.file_save_dialog.canvas.axes.cla()
-
+        # read the files and preserve the filepositions from before
         x = []
         y = []
         
-        # read the files and save the filepositions from before
         self.temp_time.flush()
         temp_y_file = 0
 
@@ -171,13 +169,23 @@ class FileSaver:
             
             i = i + 1
 
-        # set the filepositions to the old positions
         self.temp_time.seek(time_pos)
         temp_y_file.seek(y_file_pos)
-        
-        # TODO Plot beschriften
 
+        # plot the new data
+        self.file_save_dialog.canvas.axes.cla()
+        
         self.file_save_dialog.canvas.axes.plot(x, y, 'r')
+        if raw:
+            self.file_save_dialog.canvas.axes.set_title("Rohdaten")
+            self.file_save_dialog.canvas.axes.set_ylabel('(mV)')
+        elif filtered:
+            self.file_save_dialog.canvas.axes.set_title("gefiltert (mV)")
+            self.file_save_dialog.canvas.axes.set_ylabel('(mV)')
+        else:
+            self.file_save_dialog.canvas.axes.set_title("envelope")
+
+        self.file_save_dialog.canvas.axes.set_xlabel('Zeit (s)')
         self.file_save_dialog.canvas.draw()
 
     '''
@@ -243,9 +251,9 @@ class FileSaver:
         if self.file_save_dialog.rdb_save_raw.isChecked():
             file.write(",Rohdaten (mV)")
         if self.file_save_dialog.rdb_save_filtered.isChecked():
-            file.write(",gefilterte Daten")
+            file.write(",gefilterte Daten (mV)")
         if self.file_save_dialog.rdb_save_envlope.isChecked():
-            file.write(",gefilterte quadriert")
+            file.write(",envelope")
         file.write("\n")
 
         while True:
@@ -305,10 +313,10 @@ class FileSaver:
             file.write(",Rohdaten (mV)")
 
         if self.file_save_dialog.rdb_save_filtered.isChecked():
-            file.write(",gefilterte Daten")
+            file.write(",gefilterte Daten (mV)")
 
         if self.file_save_dialog.rdb_save_envlope.isChecked():
-            file.write(",gefilterte quadriert")
+            file.write(",envelope")
 
         file.write("\n")
 

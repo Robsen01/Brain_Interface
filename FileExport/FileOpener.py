@@ -115,7 +115,8 @@ class FileOpener:
     def update_plot(self):
         self.file_dialog.canvas.axes.cla()  # Clear the canvas.
 
-        # TODO achsen beschriften
         self.file_dialog.canvas.axes.plot(self.values[0], self.values[1], 'r')
+        self.file_dialog.canvas.axes.set_title(self.header[1])
+        self.file_dialog.canvas.axes.set_xlabel('Zeit (s)')
         # Trigger the canvas to update and redraw.
         self.file_dialog.canvas.draw()

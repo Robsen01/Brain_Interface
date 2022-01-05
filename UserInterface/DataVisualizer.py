@@ -163,12 +163,17 @@ class MainWindow(QMainWindow):
         self.canvas.axes.cla()  # Clear the canvas.
         if self.rdb_raw.isChecked():
             self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_raw, 'r')
+            self.canvas.axes.set_title('Rohdaten')
+            self.canvas.axes.set_ylabel('mV')
         elif self.rdb_filtered.isChecked():
             self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_filtered, 'r')
+            self.canvas.axes.set_title('gefiltert')
+            self.canvas.axes.set_ylabel('mV')
         else:
             self.canvas.axes.plot(self.PDR.x_queue, self.PDR.y_values_envlope, 'r')
+            self.canvas.axes.set_title('envelope')
+        self.canvas.axes.set_xlabel('Zeit (s)')
 
-        # TODO plot beschriften
         # Trigger the canvas to update and redraw.
         self.canvas.draw()
 
