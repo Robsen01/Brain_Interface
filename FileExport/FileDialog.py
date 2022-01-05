@@ -83,7 +83,7 @@ class FileDialog(QMainWindow):
         settings_layout.addWidget(self.rdb_save_envlope)
 
         self.chk_accumulate  = QCheckBox(text = "kumuliert")
-        self.chk_accumulate .setChecked(True)
+        self.chk_accumulate.setChecked(False)
         settings_layout.addWidget(self.chk_accumulate)
 
         self.txt_cumulate  = QLineEdit()

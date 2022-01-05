@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
 
         self.file_saver = FileSaver.FileSaver()
         self.fileopener = []
-
+        self.resize(1000, 600)
         self.show()
 
     '''
@@ -146,6 +146,8 @@ class MainWindow(QMainWindow):
 
         self.btn_save = QPushButton('Speichern', self)
         self.btn_save.clicked.connect(self.on_save_button)
+        self.btn_save.setEnabled(False)
+        self.btn_save_Enabledflag = False # remembers if this button was enabled while the Arduino-connection is established
         stopbtn_layout.addWidget(self.btn_save)
 
         self.btn_open = QPushButton('Öffnen', self)
@@ -197,7 +199,12 @@ class MainWindow(QMainWindow):
         self.btn_pause.setEnabled(enable)
         self.btn_record.setEnabled(enable)
         self.btn_open.setEnabled(enable)
-        self.btn_save.setEnabled(enable)
+
+        if not enable:
+            self.btn_save.setEnabled(enable)
+        elif self.btn_save_Enabledflag:
+            # only enable the save button, if there already is data to be saved
+            self.btn_save.setEnabled(enable)
         
 
     '''
@@ -211,6 +218,8 @@ class MainWindow(QMainWindow):
             self.PDR.clear_arrays()
             self.update_timer.start()
             self.update_plot()
+            self.btn_save.setEnabled(True)
+            self.btn_save_Enabledflag = True
 
     '''
     Connects to the Arduino and starts the timer, which updates the plot every x milliseconds .
