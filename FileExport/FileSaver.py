@@ -1,6 +1,5 @@
 import sys
 
-from numpy import sign
 sys.path.append('../../Brain_Interface')
 
 from FileExport.FileDialog import FileDialog
@@ -8,6 +7,7 @@ from PySide2.QtWidgets import QFileDialog, QMessageBox
 import ArduinoToPiDataTransfer.PiDataReceiverGeneric as PDRG
 import tempfile
 import os
+import datetime
 
 '''
 Expects the user to hook its on_new_data event to the event, where the new data appears.
@@ -194,7 +194,18 @@ class FileSaver:
     '''
     def save_to_file(self, event):
         # open file Dialoge
-        file_selection = QFileDialog.getSaveFileName(self.file_save_dialog, "Speicherposition wählen", "", "Messungen (*.csv)")
+        dtt_now = datetime.datetime.now()
+        dtt_string = dtt_now.strftime("%Y%m%d_%H%M%S")
+
+        if self.file_save_dialog.rdb_save_raw.isChecked():
+            dtt_string += "_rohdaten"
+        elif self.file_save_dialog.rdb_save_filtered.isChecked():
+            dtt_string += "_gefilterte"
+        else:
+            dtt_string += "_envelope"
+        print("date and time:",dtt_string)
+        
+        file_selection = QFileDialog.getSaveFileName(self.file_save_dialog, "Speicherposition wählen", dtt_string, "Messungen (*.csv)")
         
         if file_selection[0].endswith(".csv"):
             try:
