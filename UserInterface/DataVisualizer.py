@@ -99,11 +99,11 @@ class MainWindow(QMainWindow):
         # setup group with startbtn and Port-selection-comboBox
         threshold_label = QLabel("Threshold: ")
         
-        self.threshold = QLineEdit()
-        self.threshold.setText("0")
+        self.txt_threshold = QLineEdit()
+        self.txt_threshold.setText("0")
         
         startbtn_and_cbx_layout.addWidget(threshold_label, 2, 1, 1, 1)
-        startbtn_and_cbx_layout.addWidget(self.threshold, 2, 2, 1, 1)
+        startbtn_and_cbx_layout.addWidget(self.txt_threshold, 2, 2, 1, 1)
 
         self.btn_threshold_config = QPushButton('Testen', self)
         self.btn_threshold_config.clicked.connect(self.on_threshold_button)
@@ -199,6 +199,7 @@ class MainWindow(QMainWindow):
         self.btn_pause.setEnabled(enable)
         self.btn_record.setEnabled(enable)
         self.btn_open.setEnabled(enable)
+        self.txt_threshold.setEnabled(enable)
 
         if not enable:
             self.btn_save.setEnabled(enable)
@@ -220,6 +221,10 @@ class MainWindow(QMainWindow):
             self.update_plot()
             self.btn_save.setEnabled(True)
             self.btn_save_Enabledflag = True
+        else:
+            msgBox = QMessageBox()
+            msgBox.setText("Es konnte keine Verbindung zum Arduino aufgebaut werden.")
+            msgBox.exec()
 
     '''
     Connects to the Arduino and starts the timer, which updates the plot every x milliseconds .
@@ -243,6 +248,10 @@ class MainWindow(QMainWindow):
             self.update_plot()
             self.btn_threshold_config.setText("Übernehmen")
             self.btn_threshold_discard.setEnabled(True)
+        else:
+            msgBox = QMessageBox()
+            msgBox.setText("Es konnte keine Verbindung zum Arduino aufgebaut werden.")
+            msgBox.exec()
 
     '''
     Proposes a Threshold and writes it to the determined Threshold to the Threshold-Textbox
@@ -258,7 +267,7 @@ class MainWindow(QMainWindow):
             self.threshold_timer.stop()
             self.btn_threshold_config.setText("Testen")
             self.btn_threshold_discard.setEnabled(False)
-            self.threshold.setText(str(max(self.PDR.y_values_envlope)))
+            self.txt_threshold.setText(str(max(self.PDR.y_values_envlope)))
             self.threshold_config_lbl.setText(self.threshold_config_lbl_text)
             
     '''
@@ -349,7 +358,7 @@ class connect_to_Arduino_Thread(QThread):
                 del self.mw.PDR
                     
             if self.send_threshold:
-                self.mw.PDR = PDR.PiDataReceiver(port = self.mw.cbx_port.currentData(), threshold = int(self.mw.threshold.text()), arr_len = self.arr_len)
+                self.mw.PDR = PDR.PiDataReceiver(port = self.mw.cbx_port.currentData(), threshold = int(self.mw.txt_threshold.text()), arr_len = self.arr_len)
             else:
                 self.mw.PDR = PDR.PiDataReceiver(port = self.mw.cbx_port.currentData(), threshold = 0, arr_len = self.arr_len)
 
