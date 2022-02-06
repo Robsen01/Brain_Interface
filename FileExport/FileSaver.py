@@ -203,7 +203,6 @@ class FileSaver:
             dtt_string += "_gefilterte"
         else:
             dtt_string += "_envelope"
-        print("date and time:",dtt_string)
         
         file_selection = QFileDialog.getSaveFileName(self.file_save_dialog, "Speicherposition wählen", dtt_string, "Messungen (*.csv)")
         

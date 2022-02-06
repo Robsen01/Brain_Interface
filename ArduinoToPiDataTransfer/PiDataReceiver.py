@@ -35,6 +35,7 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         # flag if arduino has confirmed its all good
         self.port_confirmed = False
         self.thread.start()
+        self.write_data = True # true if the arriving data should be pushed in the value-arrays
         
         # array for new-data-event listener functions
         self.listeners = []
@@ -65,7 +66,7 @@ class PiDataReceiver(PDRG.PiDataReceiverGeneric):
         while 1:
             lst = PDRG.PiDataReceiverGeneric.read(self)
 
-            if(len(lst) == 4):
+            if(len(lst) == 4 and self.write_data):
                 self.y_values_raw.pop(0)
                 self.y_values_raw.append(PDRG.PiDataReceiverGeneric.raw_to_mV(lst[0]))
                 self.y_values_filtered.pop(0)

@@ -71,18 +71,24 @@ class MainWindow(QMainWindow):
 
         self.rdb_raw = QRadioButton("Rohdaten")
         self.rdb_raw.setChecked(False)
+        self.rdb_raw.clicked.connect(self.on_rdb_change)
         graph_layout.addWidget(self.rdb_raw, 1, 2, 1, 1)
 
         self.rdb_filtered = QRadioButton("gefiltert")
         self.rdb_filtered.setChecked(False)
+        self.rdb_filtered.clicked.connect(self.on_rdb_change)
         graph_layout.addWidget(self.rdb_filtered, 1, 3, 1, 1)
 
         self.rdb_envlope = QRadioButton("envelope")
         self.rdb_envlope.setChecked(True)
+        self.rdb_envlope.clicked.connect(self.on_rdb_change)
         graph_layout.addWidget(self.rdb_envlope, 1, 4, 1, 1)
 
         graph_group.setLayout(graph_layout)
         self.layout.addWidget(graph_group)
+
+    def on_rdb_change(self) -> None:
+        self.update_plot()
 
     '''
     Setup the second Groupbox, which holds the threshold-field, the thrshold-config-buttons and the Port-Combobox.
@@ -289,6 +295,7 @@ class MainWindow(QMainWindow):
         
         # disconnect FileSaver-listener
         if hasattr(self, "PDR"):
+            self.PDR.write_data = False
             self.PDR.disconnect_new_data_event(self.file_saver.on_new_data)
 
     '''

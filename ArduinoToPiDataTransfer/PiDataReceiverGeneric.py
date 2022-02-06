@@ -4,7 +4,7 @@ import serial.tools.list_ports
 import math
 
 '''
-PiDataReceiverGeneric is a very universal class, which has everything you need to communicate with the Arduino.
+PiDataReceiverGeneric has everything you need to communicate with the Arduino.
 '''
 class PiDataReceiverGeneric:
 
