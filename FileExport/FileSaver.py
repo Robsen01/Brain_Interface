@@ -68,6 +68,13 @@ class FileSaver:
                 self.temp_envlope.close()
 
     '''
+    deletes old tempfiles and starts new ones
+    '''
+    def reset_tmp_files(self) -> None:
+        self.close_tmp_files()
+        self.open_tmp_files()
+
+    '''
     Event-Handler which should be connected to a Event wich is fired when new Data arrives.
     Expects the list of the Data.
     Writes this Data to the respective Temp-file.

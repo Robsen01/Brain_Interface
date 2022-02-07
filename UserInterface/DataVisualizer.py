@@ -221,6 +221,7 @@ class MainWindow(QMainWindow):
         self.enable_PDR_UI(True)
 
         if(self.worker_threshold.arduino_connect):
+            self.file_saver.reset_tmp_files()
             self.PDR.connect_new_data_event(self.file_saver.on_new_data)
             self.PDR.clear_arrays()
             self.update_timer.start()
