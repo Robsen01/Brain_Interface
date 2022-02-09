@@ -31,6 +31,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
+
+        self.setWindowTitle(" ")
         
         # Setup a timer to trigger the redraw by calling update_plot.
         self.update_timer = QTimer()

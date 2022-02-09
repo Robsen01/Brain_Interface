@@ -28,6 +28,8 @@ class FileDialog(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(FileDialog, self).__init__(*args, **kwargs)
 
+        self.setWindowTitle(" ")
+
         self.layout = QVBoxLayout()
 
         self.setup_graph_group()
