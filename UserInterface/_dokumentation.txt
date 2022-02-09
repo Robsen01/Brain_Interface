@@ -1,0 +1,2 @@
+Der DataVisualizer wird benutzt, um die Daten des Arduino anzuzeigen, und zu speichern.
+Außerdem kann eine Threashhold definiert werden, um Rauschen zu unterdrücken.

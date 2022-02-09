@@ -1,0 +1,9 @@
+Datenübertragung funktioniert über einen USB-Port mit der Serial Schnittstelle.
+Im Arduino werden daten mit Serial.read() oder Serial.print() ausgegeben.
+Im PC mit dem pyserial modul. pip install pyserial.
+Tutorial: https://create.arduino.cc/projecthub/ansh2919/serial-communication-between-python-and-arduino-e7cce0
+
+Auf Python Seite liest ein Thread die ganze zeit die eintreffenden Daten und schreibt sie in eine Queue/Buffer.
+Auf anderen Threads, z.B. auf den der GUI können Daten zum Arduino geschickt werden. Z.B. welche Threashhold für den Filter gewollt ist.
+Man muss den Port vom Arduino angeben. Sollte mit der GUI gut machbar sein:
+https://stackoverflow.com/questions/24214643/python-to-automatically-select-serial-ports-for-arduino
