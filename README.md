@@ -1,4 +1,4 @@
-#Gui for Braininterface Project
+Gui for Braininterface Project
 Hierbei handelt es sich um eine Gui, welche mit Hilfe von PySide2 und Matpllotlib generiert wurde.
 Zunächst wird ein Canvas erzeugt, auf dem die Grafik abgebildet werden soll.
 Da Matplotlib schon viele Nützliche Funktionen beinhaltet, werden auch die Navigation-Tools direkt mit eingebunden, um die Grafik besser anpassen zu können.
